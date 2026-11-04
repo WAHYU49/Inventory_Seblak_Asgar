@@ -31,4 +31,9 @@ class Ingredient extends Model
     {
         return $this->hasMany(RecipeDetail::class);
     }
+
+    public function purchaseDetails(): HasMany
+    {
+        return $this->hasMany(PurchaseDetail::class);
+    }
 }

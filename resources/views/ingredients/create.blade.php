@@ -1,114 +1,65 @@
+@extends('layouts.app')
 
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tambah Bahan Baku - Inventory Seblak Asgar</title>
-</head>
-<body>
+@section('title', 'Tambah Bahan Baku - Inventory Seblak Asgar')
 
-    @include('layouts.navbar')
-
-    <div class="main-content">
-
+@section('content')
+<div class="page-header">
     <h1>Tambah Bahan Baku</h1>
+    <p>Daftarkan bahan baku, satuan, dan stok awal.</p>
+</div>
 
-    <a href="{{ route('ingredients.index') }}">Kembali</a>
+<p><a href="{{ route('ingredients.index') }}">← Kembali ke Bahan Baku</a></p>
 
-    @if ($errors->any())
-        <div style="color: red;">
-            <strong>Terjadi kesalahan:</strong>
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+@if ($errors->any())
+    <div style="color: red; margin-bottom: 15px;">
+        @foreach ($errors->all() as $error)
+            <p>{{ $error }}</p>
+        @endforeach
+    </div>
+@endif
 
-    <form action="{{ route('ingredients.store') }}" method="POST">
-        @csrf
+<form action="{{ route('ingredients.store') }}" method="POST">
+    @csrf
 
-        <div>
-            <label>Kode Bahan Baku</label><br>
-            <input type="text"
-                   name="code"
-                   value="{{ old('code') }}"
-                   placeholder="Contoh: BB001"
-                   required>
-        </div>
-
-        <br>
-
-        <div>
-            <label>Nama Bahan Baku</label><br>
-            <input type="text"
-                   name="name"
-                   value="{{ old('name') }}"
-                   placeholder="Contoh: Kerupuk Seblak"
-                   required>
-        </div>
-
-        <br>
-
-        <div>
-            <label>Satuan</label><br>
-            <select name="unit" required>
-                <option value="">-- Pilih Satuan --</option>
-                <option value="gram" {{ old('unit') == 'gram' ? 'selected' : '' }}>Gram</option>
-                <option value="kg" {{ old('unit') == 'kg' ? 'selected' : '' }}>Kilogram</option>
-                <option value="ml" {{ old('unit') == 'ml' ? 'selected' : '' }}>Mililiter</option>
-                <option value="liter" {{ old('unit') == 'liter' ? 'selected' : '' }}>Liter</option>
-                <option value="pcs" {{ old('unit') == 'pcs' ? 'selected' : '' }}>Pcs</option>
-                <option value="butir" {{ old('unit') == 'butir' ? 'selected' : '' }}>Butir</option>
-                <option value="bungkus" {{ old('unit') == 'bungkus' ? 'selected' : '' }}>Bungkus</option>
-                <option value="ikat" {{ old('unit') == 'ikat' ? 'selected' : '' }}>Ikat</option>
-            </select>
-        </div>
-
-        <br>
-
-        <div>
-            <label>Stok Awal</label><br>
-            <input type="number"
-                   name="current_stock"
-                   value="{{ old('current_stock', 0) }}"
-                   min="0"
-                   step="0.001"
-                   required>
-        </div>
-
-        <br>
-
-        <div>
-            <label>Stok Minimum</label><br>
-            <input type="number"
-                   name="minimum_stock"
-                   value="{{ old('minimum_stock', 0) }}"
-                   min="0"
-                   step="0.001"
-                   required>
-        </div>
-
-        <br>
-
-        <div>
-            <label>Harga Beli (Rp)</label><br>
-            <input type="number"
-                   name="purchase_price"
-                   value="{{ old('purchase_price') }}"
-                   min="0"
-                   step="0.01"
-                   placeholder="Contoh: 25000">
-        </div>
-
-        <br>
-
-        <button type="submit">Simpan Bahan Baku</button>
-
-    </form>
+    <div style="margin-bottom: 15px;">
+        <label>Kode Bahan Baku</label><br>
+        <input type="text" name="code" value="{{ old('code') }}"
+            placeholder="Contoh: BB001" required>
     </div>
 
-</body>
-</html>
+    <div style="margin-bottom: 15px;">
+        <label>Nama Bahan Baku</label><br>
+        <input type="text" name="name" value="{{ old('name') }}"
+            placeholder="Contoh: Kerupuk Seblak" required>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label>Satuan</label><br>
+        <input type="text" name="unit" value="{{ old('unit') }}"
+            placeholder="Contoh: gram, kg, pcs, bungkus" required>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label>Stok Awal</label><br>
+        <input type="number" name="current_stock"
+            value="{{ old('current_stock', 0) }}"
+            min="0" step="0.001" required>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label>Minimum Stok</label><br>
+        <input type="number" name="minimum_stock"
+            value="{{ old('minimum_stock', 0) }}"
+            min="0" step="0.001" required>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label>Harga Beli</label><br>
+        <input type="number" name="purchase_price"
+            value="{{ old('purchase_price') }}"
+            min="0" step="0.01" placeholder="Contoh: 15000">
+    </div>
+
+    <button type="submit">Simpan Bahan Baku</button>
+</form>
+@endsection

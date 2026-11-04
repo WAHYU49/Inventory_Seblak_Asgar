@@ -79,6 +79,7 @@
     }
 </style>
 
+
 <aside class="sidebar">
 
     <div class="sidebar-brand">
@@ -117,7 +118,8 @@
 
     <div class="sidebar-title">Transaksi</div>
 
-    <a href="#" onclick="alert('Fitur pembelian belum dibuat.'); return false;">
+    <a href="{{ route('purchases.index') }}"
+        class="{{ request()->routeIs('purchases.*') ? 'active' : '' }}">
         Pembelian Bahan Baku
     </a>
 
@@ -136,5 +138,6 @@
     </a>
 
 </aside>
+
 
 

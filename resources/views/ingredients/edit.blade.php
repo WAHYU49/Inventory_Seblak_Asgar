@@ -1,107 +1,67 @@
+@extends('layouts.app')
 
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Bahan Baku - Inventory Seblak Asgar</title>
-</head>
-<body>
+@section('title', 'Edit Bahan Baku - Inventory Seblak Asgar')
 
-    @include('layouts.navbar')
-
-    <div class="main-content">
-
+@section('content')
+<div class="page-header">
     <h1>Edit Bahan Baku</h1>
+    <p>Perbarui informasi dan batas minimum stok bahan baku.</p>
+</div>
 
-    <a href="{{ route('ingredients.index') }}">Kembali</a>
+<p><a href="{{ route('ingredients.index') }}">← Kembali ke Bahan Baku</a></p>
 
-    @if ($errors->any())
-        <div style="color: red;">
-            <strong>Terjadi kesalahan:</strong>
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+@if ($errors->any())
+    <div style="color: red; margin-bottom: 15px;">
+        @foreach ($errors->all() as $error)
+            <p>{{ $error }}</p>
+        @endforeach
+    </div>
+@endif
 
-    <form action="{{ route('ingredients.update', $ingredient->id) }}" method="POST">
-        @csrf
-        @method('PUT')
+<form action="{{ route('ingredients.update', $ingredient->id) }}" method="POST">
+    @csrf
+    @method('PUT')
 
-        <div>
-            <label>Kode Bahan Baku</label><br>
-            <input type="text"
-                   name="code"
-                   value="{{ old('code', $ingredient->code) }}"
-                   required>
-        </div>
-
-        <br>
-
-        <div>
-            <label>Nama Bahan Baku</label><br>
-            <input type="text"
-                   name="name"
-                   value="{{ old('name', $ingredient->name) }}"
-                   required>
-        </div>
-
-        <br>
-
-        <div>
-            <label>Satuan</label><br>
-            <select name="unit" required>
-                @foreach (['gram', 'kg', 'ml', 'liter', 'pcs', 'butir', 'bungkus', 'ikat'] as $unit)
-                    <option value="{{ $unit }}"
-                        {{ old('unit', $ingredient->unit) == $unit ? 'selected' : '' }}>
-                        {{ ucfirst($unit) }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        <br>
-
-        <div>
-            <label>Stok Saat Ini</label><br>
-            <input type="text"
-                   value="{{ $ingredient->current_stock }}"
-                   readonly>
-            <small>Stok diubah melalui pembelian atau penyesuaian stok.</small>
-        </div>
-
-        <br>
-
-        <div>
-            <label>Stok Minimum</label><br>
-            <input type="number"
-                   name="minimum_stock"
-                   value="{{ old('minimum_stock', $ingredient->minimum_stock) }}"
-                   min="0"
-                   step="0.001"
-                   required>
-        </div>
-
-        <br>
-
-        <div>
-            <label>Harga Beli (Rp)</label><br>
-            <input type="number"
-                   name="purchase_price"
-                   value="{{ old('purchase_price', $ingredient->purchase_price) }}"
-                   min="0"
-                   step="0.01">
-        </div>
-
-        <br>
-
-        <button type="submit">Simpan Perubahan</button>
-
-    </form>
+    <div style="margin-bottom: 15px;">
+        <label>Kode Bahan Baku</label><br>
+        <input type="text" name="code"
+            value="{{ old('code', $ingredient->code) }}" required>
     </div>
 
-</body>
-</html>
+    <div style="margin-bottom: 15px;">
+        <label>Nama Bahan Baku</label><br>
+        <input type="text" name="name"
+            value="{{ old('name', $ingredient->name) }}" required>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label>Satuan</label><br>
+        <input type="text" name="unit"
+            value="{{ old('unit', $ingredient->unit) }}" required>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label>Stok Saat Ini</label><br>
+        <input type="text"
+            value="{{ $ingredient->current_stock }} {{ $ingredient->unit }}"
+            readonly>
+        <small>Stok diperbarui melalui transaksi pembelian atau penyesuaian stok.</small>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label>Minimum Stok</label><br>
+        <input type="number" name="minimum_stock"
+            value="{{ old('minimum_stock', $ingredient->minimum_stock) }}"
+            min="0" step="0.001" required>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label>Harga Beli</label><br>
+        <input type="number" name="purchase_price"
+            value="{{ old('purchase_price', $ingredient->purchase_price) }}"
+            min="0" step="0.01">
+    </div>
+
+    <button type="submit">Simpan Perubahan</button>
+</form>
+@endsection

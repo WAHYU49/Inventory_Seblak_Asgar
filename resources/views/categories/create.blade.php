@@ -1,41 +1,47 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Tambah Kategori</title>
-</head>
-<body>
 
-    @include('layouts.navbar')
+@extends('layouts.app')
 
-    <div class="main-content">
+@section('title', 'Tambah Kategori - Inventory Seblak Asgar')
 
-    <h1>Tambah Kategori</h1>
+@section('content')
 
-    @if($errors->any())
-        <ul style="color:red">
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    @endif
+<div class="page-header">
+    <h1>Tambah Kategori Menu</h1>
+    <p>Tambahkan kategori baru untuk mengelompokkan produk menu.</p>
+</div>
 
-    <form action="{{ route('categories.store') }}" method="POST">
-        @csrf
+<p>
+    <a href="{{ route('categories.index') }}">← Kembali ke Kategori</a>
+</p>
 
+@if ($errors->any())
+    <div style="color: red;">
+        @foreach ($errors->all() as $error)
+            <p>{{ $error }}</p>
+        @endforeach
+    </div>
+@endif
+
+<form action="{{ route('categories.store') }}" method="POST">
+    @csrf
+
+    <div style="margin-bottom: 15px;">
         <label>Nama Kategori</label><br>
-        <input type="text" name="name" value="{{ old('name') }}" required>
+        <input type="text"
+               name="name"
+               value="{{ old('name') }}"
+               placeholder="Contoh: Seblak"
+               required>
+    </div>
 
-        <br><br>
-
+    <div style="margin-bottom: 15px;">
         <label>Deskripsi</label><br>
-        <textarea name="description">{{ old('description') }}</textarea>
+        <textarea name="description"
+                  rows="4"
+                  placeholder="Keterangan kategori">{{ old('description') }}</textarea>
+    </div>
 
-        <br><br>
+    <button type="submit">Simpan Kategori</button>
+</form>
 
-        <button type="submit">Simpan</button>
-        <a href="{{ route('categories.index') }}">Kembali</a>
-    </form>
-
-</body>
-</html>
+@endsection
