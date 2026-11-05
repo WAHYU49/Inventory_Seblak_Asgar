@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Purchase;
 use App\Models\Ingredient;
+use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PurchaseController extends Controller
 {
@@ -38,12 +41,12 @@ class PurchaseController extends Controller
             'details.*.unit_price' => 'required|numeric|min:0',
         ]);
 
-        $totalAmount = 0;
+        DB::transaction(function () use ($validated) {
 
-        DB::transaction(function () use ($validated, &$totalAmount) {
+            $totalAmount = 0;
 
             $purchase = Purchase::create([
-                'purchase_number' => 'PB-' . now()->format('YmdHis') . '-' . strtoupper(\Illuminate\Support\Str::random(4)),
+                'purchase_number' => 'PB-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(4)),
                 'purchase_date' => $validated['purchase_date'],
                 'total_amount' => 0,
                 'notes' => $validated['notes'] ?? null,
@@ -57,7 +60,7 @@ class PurchaseController extends Controller
                     ->first();
 
                 if (!$ingredient) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
+                    throw ValidationException::withMessages([
                         'details' => 'Terdapat bahan baku yang tidak aktif atau tidak ditemukan.',
                     ]);
                 }
@@ -66,6 +69,7 @@ class PurchaseController extends Controller
                 $unitPrice = $detail['unit_price'];
                 $subtotal = $quantity * $unitPrice;
 
+                // Simpan detail pembelian
                 $purchase->details()->create([
                     'ingredient_id' => $ingredient->id,
                     'quantity' => $quantity,
@@ -73,15 +77,35 @@ class PurchaseController extends Controller
                     'subtotal' => $subtotal,
                 ]);
 
+                // Ambil stok sebelum pembelian
+                $stockBefore = $ingredient->current_stock;
+
+                // Tambahkan stok bahan baku
                 $ingredient->increment('current_stock', $quantity);
 
+                // Ambil stok setelah pembelian
+                $stockAfter = $ingredient->fresh()->current_stock;
+
+                // Perbarui harga pembelian terakhir
                 $ingredient->update([
                     'purchase_price' => $unitPrice,
+                ]);
+
+                // Catat riwayat pergerakan stok
+                StockMovement::create([
+                    'ingredient_id' => $ingredient->id,
+                    'type' => 'purchase',
+                    'quantity' => $quantity,
+                    'stock_before' => $stockBefore,
+                    'stock_after' => $stockAfter,
+                    'reference_number' => $purchase->purchase_number,
+                    'notes' => 'Penambahan stok dari transaksi pembelian.',
                 ]);
 
                 $totalAmount += $subtotal;
             }
 
+            // Perbarui total pembelian
             $purchase->update([
                 'total_amount' => $totalAmount,
             ]);

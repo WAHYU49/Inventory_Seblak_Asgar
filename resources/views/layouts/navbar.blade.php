@@ -1,4 +1,3 @@
-
 <style>
     * {
         box-sizing: border-box;
@@ -20,6 +19,8 @@
         left: 0;
         padding: 25px 15px;
         overflow-y: auto;
+        display: flex;
+        flex-direction: column;
     }
 
     .sidebar-brand {
@@ -61,6 +62,39 @@
         font-weight: bold;
     }
 
+    .sidebar-footer {
+        margin-top: auto;
+        border-top: 1px solid #41614e;
+        padding-top: 18px;
+    }
+
+    .admin-info {
+        padding: 0 12px 12px;
+        color: #dce8df;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .admin-info small {
+        color: #a8c0b0;
+    }
+
+    .logout-button {
+        width: 100%;
+        padding: 12px 15px;
+        background: #a83232;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .logout-button:hover {
+        background: #c03939;
+    }
+
     .main-content {
         margin-left: 250px;
         padding: 30px;
@@ -78,7 +112,6 @@
         }
     }
 </style>
-
 
 <aside class="sidebar">
 
@@ -119,25 +152,42 @@
     <div class="sidebar-title">Transaksi</div>
 
     <a href="{{ route('purchases.index') }}"
-        class="{{ request()->routeIs('purchases.*') ? 'active' : '' }}">
+       class="{{ request()->routeIs('purchases.*') ? 'active' : '' }}">
         Pembelian Bahan Baku
     </a>
 
-    <a href="#" onclick="alert('Fitur penjualan belum dibuat.'); return false;">
+    <a href="{{ route('sales.index') }}"
+    class="{{ request()->routeIs('sales.*') ? 'active' : '' }}">
         Penjualan
     </a>
 
     <div class="sidebar-title">Laporan</div>
 
-    <a href="#" onclick="alert('Fitur laporan belum dibuat.'); return false;">
-        Laporan Stok
+    <a href="{{ route('stock-adjustments.index') }}"
+       class="{{ request()->routeIs('stock-adjustments.*') ? 'active' : '' }}">
+        Penyesuaian Stok
     </a>
 
-    <a href="#" onclick="alert('Fitur laporan belum dibuat.'); return false;">
+    <a href="{{ route('stock-movements.index') }}"
+       class="{{ request()->routeIs('stock-movements.*') ? 'active' : '' }}">
         Riwayat Stok
     </a>
 
+    <div class="sidebar-footer">
+
+        <div class="admin-info">
+            Login sebagai:<br>
+            <strong>{{ Auth::user()->name }}</strong><br>
+            <small>Administrator</small>
+        </div>
+
+        <form action="{{ route('logout') }}" method="POST">
+            @csrf
+            <button type="submit" class="logout-button">
+                Logout
+            </button>
+        </form>
+
+    </div>
+
 </aside>
-
-
-
