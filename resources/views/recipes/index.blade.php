@@ -38,6 +38,7 @@
             <th>Nama Resep</th>
             <th>Komposisi Bahan</th>
             <th>Status</th>
+            <th>Tanggal Input</th>
             <th>Aksi</th>
         </tr>
     </thead>
@@ -65,6 +66,8 @@
                     {{ $recipe->is_active ? 'Aktif' : 'Nonaktif' }}
                 </td>
 
+                <td>{{ $recipe->created_at->format('d-m-Y H:i') }}</td>
+
                 <td>
                     <a href="{{ route('recipes.edit', $recipe->id) }}">Edit</a>
 
@@ -81,7 +84,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="6">Belum ada data resep.</td>
+                <td colspan="7">Belum ada data resep.</td>
             </tr>
         @endforelse
     </tbody>

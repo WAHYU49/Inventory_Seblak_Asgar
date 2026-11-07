@@ -237,6 +237,7 @@
                     <th>Stok Saat Ini</th>
                     <th>Minimum Stok</th>
                     <th>Status</th>
+                    <th>Tanggal Input</th>
                 </tr>
             </thead>
 
@@ -255,6 +256,7 @@
                             {{ $ingredient->unit }}
                         </td>
                         <td class="stock-warning">Stok Menipis</td>
+                        <td>{{ $ingredient->created_at->format('d-m-Y H:i') }}</td>
                     </tr>
                 @endforeach
             </tbody>

@@ -25,6 +25,7 @@
                 <tr>
                     <th>No.</th>
                     <th>Tanggal</th>
+                    <th>Tanggal Input</th>
                     <th>No. Penyesuaian</th>
                     <th>Bahan Baku</th>
                     <th>Jenis</th>
@@ -42,6 +43,10 @@
 
                         <td>
                             {{ $adjustment->adjustment_date->format('d/m/Y') }}
+                        </td>
+
+                        <td>
+                            {{ $adjustment->created_at->format('d/m/Y H:i') }}
                         </td>
 
                         <td>
@@ -79,7 +84,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" style="text-align: center; padding: 25px;">
+                        <td colspan="10" style="text-align: center; padding: 25px;">
                             Belum ada data penyesuaian stok.
                         </td>
                     </tr>

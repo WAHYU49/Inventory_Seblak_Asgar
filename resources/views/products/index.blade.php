@@ -31,6 +31,7 @@
             <th>Kategori</th>
             <th>Harga Jual</th>
             <th>Status</th>
+            <th>Tanggal Input</th>
             <th>Aksi</th>
         </tr>
     </thead>
@@ -44,6 +45,7 @@
                 <td>{{ $product->category->name ?? '-' }}</td>
                 <td>Rp {{ number_format($product->selling_price, 0, ',', '.') }}</td>
                 <td>{{ $product->is_active ? 'Aktif' : 'Nonaktif' }}</td>
+                <td>{{ $product->created_at->format('d-m-Y H:i') }}</td>
                 <td>
                     <a href="{{ route('products.edit', $product->id) }}">Edit</a>
 
@@ -59,7 +61,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="7">Belum ada produk menu.</td>
+                <td colspan="8">Belum ada produk menu.</td>
             </tr>
         @endforelse
     </tbody>

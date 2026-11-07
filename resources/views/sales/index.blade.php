@@ -31,6 +31,7 @@
                 <th style="padding:13px; text-align:left;">No.</th>
                 <th style="padding:13px; text-align:left;">Nomor Transaksi</th>
                 <th style="padding:13px; text-align:left;">Tanggal</th>
+                <th style="padding:13px; text-align:left;">Tanggal Input</th>
                 <th style="padding:13px; text-align:left;">Detail Menu</th>
                 <th style="padding:13px; text-align:right;">Total</th>
             </tr>
@@ -53,6 +54,10 @@
                     </td>
 
                     <td style="padding:13px;">
+                        {{ $sale->created_at->format('d-m-Y H:i') }}
+                    </td>
+
+                    <td style="padding:13px;">
                         @foreach($sale->details as $detail)
                             <div style="margin-bottom:5px;">
                                 {{ $detail->product->name ?? 'Produk tidak tersedia' }}
@@ -70,7 +75,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" style="padding:30px; text-align:center; color:#888;">
+                    <td colspan="6" style="padding:30px; text-align:center; color:#888;">
                         Belum ada transaksi penjualan.
                     </td>
                 </tr>

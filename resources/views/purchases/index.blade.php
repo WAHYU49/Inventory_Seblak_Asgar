@@ -36,6 +36,7 @@
                     <th style="padding:12px; text-align:left;">No</th>
                     <th style="padding:12px; text-align:left;">Nomor Pembelian</th>
                     <th style="padding:12px; text-align:left;">Tanggal</th>
+                    <th style="padding:12px; text-align:left;">Tanggal Input</th>
                     <th style="padding:12px; text-align:left;">Jumlah Item</th>
                     <th style="padding:12px; text-align:left;">Total Pembelian</th>
                     <th style="padding:12px; text-align:left;">Catatan</th>
@@ -58,6 +59,10 @@
                         </td>
 
                         <td style="padding:12px;">
+                            {{ $purchase->created_at->format('d-m-Y H:i') }}
+                        </td>
+
+                        <td style="padding:12px;">
                             {{ $purchase->details->count() }} item
                         </td>
 
@@ -71,7 +76,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" style="padding:20px; text-align:center;">
+                        <td colspan="7" style="padding:20px; text-align:center;">
                             Belum ada transaksi pembelian.
                         </td>
                     </tr>

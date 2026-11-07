@@ -44,6 +44,7 @@
             <th>Harga Beli</th>
             <th>Status Stok</th>
             <th>Status Data</th>
+            <th>Tanggal Input</th>
             <th>Aksi</th>
         </tr>
     </thead>
@@ -79,6 +80,8 @@
                     {{ $ingredient->is_active ? 'Aktif' : 'Nonaktif' }}
                 </td>
 
+                <td>{{ $ingredient->created_at->format('d-m-Y H:i') }}</td>
+
                 <td>
                     <a href="{{ route('ingredients.edit', $ingredient->id) }}">
                         Edit
@@ -99,7 +102,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="10">Belum ada data bahan baku.</td>
+                <td colspan="11">Belum ada data bahan baku.</td>
             </tr>
         @endforelse
     </tbody>
