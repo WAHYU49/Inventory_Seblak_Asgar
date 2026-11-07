@@ -1,17 +1,18 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\ProductController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IngredientController;
-use App\Http\Controllers\RecipeController;
+use App\Http\Controllers\IngredientExportController;
+use App\Http\Controllers\IngredientImportController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseController;
-use App\Http\Controllers\StockMovementController;
-use App\Http\Controllers\StockAdjustmentController;
+use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\SaleController;
+use App\Http\Controllers\StockAdjustmentController;
+use App\Http\Controllers\StockMovementController;
+use Illuminate\Support\Facades\Route;
 
 // Halaman login untuk admin yang belum login
 Route::middleware('guest')->group(function () {
@@ -40,6 +41,14 @@ Route::middleware('auth')->group(function () {
     Route::resource('products', ProductController::class);
 
     // Bahan baku
+    Route::get('/ingredients/import', [IngredientImportController::class, 'index'])
+        ->name('ingredients.import');
+    Route::post('/ingredients/import/preview', [IngredientImportController::class, 'preview'])
+        ->name('ingredients.import.preview');
+    Route::post('/ingredients/import/commit', [IngredientImportController::class, 'commit'])
+        ->name('ingredients.import.commit');
+    Route::get('/ingredients/export', IngredientExportController::class)
+        ->name('ingredients.export');
     Route::resource('ingredients', IngredientController::class);
 
     // Resep

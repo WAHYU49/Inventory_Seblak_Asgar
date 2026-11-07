@@ -28,6 +28,8 @@
 
 <p>
     <a href="{{ route('ingredients.create') }}">+ Tambah Bahan Baku</a>
+    | <a href="{{ route('ingredients.import') }}">Import Master Bahan Baku</a>
+    | <a href="{{ route('ingredients.export') }}">Export Excel</a>
 </p>
 
 <table border="1" cellpadding="10" cellspacing="0" width="100%">

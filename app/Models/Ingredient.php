@@ -15,6 +15,13 @@ class Ingredient extends Model
         'minimum_stock',
         'purchase_price',
         'is_active',
+        'category',
+        'package_quantity',
+        'het_price',
+        'hpp_price',
+        'supplier',
+        'allocation',
+        'purchase_unit',
     ];
 
     protected function casts(): array
@@ -23,6 +30,9 @@ class Ingredient extends Model
             'current_stock' => 'decimal:3',
             'minimum_stock' => 'decimal:3',
             'purchase_price' => 'decimal:2',
+            'package_quantity' => 'decimal:3',
+            'het_price' => 'decimal:2',
+            'hpp_price' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }
