@@ -16,13 +16,31 @@ class SaleController extends Controller
     /**
      * Menampilkan daftar transaksi penjualan.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $sales = Sale::with('details.product')
-            ->latest()
-            ->paginate(10);
+        $filters = $request->validate([
+            'start_date' => ['nullable', 'date_format:Y-m-d'],
+            'end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start_date'],
+        ]);
 
-        return view('sales.index', compact('sales'));
+        $sales = Sale::with('details.product')
+            ->when(
+                $filters['start_date'] ?? null,
+                fn($query, $date) => $query->whereDate('sale_date', '>=', $date)
+            )
+            ->when(
+                $filters['end_date'] ?? null,
+                fn($query, $date) => $query->whereDate('sale_date', '<=', $date)
+            )
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('sales.index', [
+            'sales' => $sales,
+            'startDate' => $filters['start_date'] ?? '',
+            'endDate' => $filters['end_date'] ?? '',
+        ]);
     }
 
     /**
@@ -43,7 +61,6 @@ class SaleController extends Controller
             return [
                 'id' => $product->id,
                 'name' => $product->name,
-                'price' => (float) $product->selling_price,
                 'recipe' => $product->recipe->details->map(function ($detail) {
                     return [
                         'name' => $detail->ingredient->name ?? 'Bahan tidak tersedia',

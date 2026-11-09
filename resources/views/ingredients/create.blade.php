@@ -53,13 +53,6 @@
             min="0" step="0.001" required>
     </div>
 
-    <div style="margin-bottom: 15px;">
-        <label>Harga Beli</label><br>
-        <input type="number" name="purchase_price"
-            value="{{ old('purchase_price') }}"
-            min="0" step="0.01" placeholder="Contoh: 15000">
-    </div>
-
     <button type="submit">Simpan Bahan Baku</button>
 </form>
 @endsection

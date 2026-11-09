@@ -66,6 +66,10 @@ class IngredientImportController extends Controller
         $headerPosition = null;
         $headerIndexes = [];
         $bestHeaderIndexes = [];
+        $requiredHeaders = array_diff(
+            array_keys(self::HEADER_MAP),
+            ['het', 'hpp_satuan']
+        );
 
         foreach ($rows->take(20) as $position => $headerRow) {
             $candidate = $this->headerIndexes($headerRow);
@@ -74,10 +78,7 @@ class IngredientImportController extends Controller
                 $bestHeaderIndexes = $candidate;
             }
 
-            $missing = array_diff(
-                array_keys(self::HEADER_MAP),
-                array_keys($candidate)
-            );
+            $missing = array_diff($requiredHeaders, array_keys($candidate));
 
             if ($missing === []) {
                 $headerPosition = $position;
@@ -88,7 +89,7 @@ class IngredientImportController extends Controller
 
         if ($headerPosition === null) {
             $missingHeaders = array_diff(
-                array_keys(self::HEADER_MAP),
+                $requiredHeaders,
                 array_keys($bestHeaderIndexes)
             );
 
@@ -133,7 +134,9 @@ class IngredientImportController extends Controller
             $attributes = [];
 
             foreach (self::HEADER_MAP as $header => $attribute) {
-                $attributes[$attribute] = $values[$headerIndexes[$header]] ?? null;
+                $attributes[$attribute] = isset($headerIndexes[$header])
+                    ? ($values[$headerIndexes[$header]] ?? null)
+                    : null;
             }
 
             $attributes['code'] = trim((string) ($attributes['code'] ?? ''));

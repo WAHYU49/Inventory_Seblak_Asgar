@@ -7,7 +7,7 @@
 
 <div class="page-header">
     <h1>Produk Menu</h1>
-    <p>Kelola daftar menu makanan dan harga jual Seblak Asgar.</p>
+    <p>Kelola daftar menu makanan Seblak Asgar.</p>
 </div>
 
 @if (session('success'))
@@ -29,7 +29,6 @@
             <th>Kode Produk</th>
             <th>Nama Produk</th>
             <th>Kategori</th>
-            <th>Harga Jual</th>
             <th>Status</th>
             <th>Tanggal Input</th>
             <th>Aksi</th>
@@ -43,7 +42,6 @@
                 <td>{{ $product->code }}</td>
                 <td>{{ $product->name }}</td>
                 <td>{{ $product->category->name ?? '-' }}</td>
-                <td>Rp {{ number_format($product->selling_price, 0, ',', '.') }}</td>
                 <td>{{ $product->is_active ? 'Aktif' : 'Nonaktif' }}</td>
                 <td>{{ $product->created_at->format('d-m-Y H:i') }}</td>
                 <td>
@@ -61,7 +59,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="8">Belum ada produk menu.</td>
+                <td colspan="7">Belum ada produk menu.</td>
             </tr>
         @endforelse
     </tbody>
@@ -72,4 +70,3 @@
 </div>
 
 @endsection
-s

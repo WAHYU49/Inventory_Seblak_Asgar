@@ -51,7 +51,7 @@
         <div id="purchase-container">
 
             <div class="purchase-row"
-                style="display:grid; grid-template-columns:2fr 1fr 1fr auto;
+                style="display:grid; grid-template-columns:2fr 1fr auto;
                 gap:10px; margin-bottom:15px; align-items:end;">
 
                 <div>
@@ -72,12 +72,6 @@
                         min="0.001" step="0.001" placeholder="Jumlah" required>
                 </div>
 
-                <div>
-                    <label>Harga Satuan (Rp)</label>
-                    <input type="number" name="details[0][unit_price]"
-                        min="0" step="0.01" placeholder="Harga" required>
-                </div>
-
                 <button type="button" onclick="removePurchase(this)">
                     Hapus
                 </button>
@@ -88,12 +82,6 @@
         <button type="button" onclick="addPurchase()">
             + Tambah Bahan Baku
         </button>
-
-        <hr>
-
-        <div style="text-align:right; font-size:18px;">
-            <strong>Estimasi Total: Rp <span id="grand-total">0</span></strong>
-        </div>
 
     </div>
 
@@ -115,7 +103,7 @@
         row.className = 'purchase-row';
         row.style.cssText = `
             display:grid;
-            grid-template-columns:2fr 1fr 1fr auto;
+            grid-template-columns:2fr 1fr auto;
             gap:10px;
             margin-bottom:15px;
             align-items:end;
@@ -142,14 +130,6 @@
                     placeholder="Jumlah" required>
             </div>
 
-            <div>
-                <label>Harga Satuan (Rp)</label>
-                <input type="number"
-                    name="details[${purchaseIndex}][unit_price]"
-                    min="0" step="0.01"
-                    placeholder="Harga" required>
-            </div>
-
             <button type="button" onclick="removePurchase(this)">
                 Hapus
             </button>
@@ -164,32 +144,10 @@
 
         if (container.children.length > 1) {
             button.closest('.purchase-row').remove();
-            calculateTotal();
         } else {
             alert('Minimal harus ada satu bahan baku.');
         }
     }
-
-    function calculateTotal() {
-        let total = 0;
-
-        document.querySelectorAll('.purchase-row').forEach(row => {
-            const quantity = parseFloat(
-                row.querySelector('[name*="[quantity]"]').value
-            ) || 0;
-
-            const price = parseFloat(
-                row.querySelector('[name*="[unit_price]"]').value
-            ) || 0;
-
-            total += quantity * price;
-        });
-
-        document.getElementById('grand-total').textContent =
-            new Intl.NumberFormat('id-ID').format(total);
-    }
-
-    document.getElementById('purchase-container').addEventListener('input', calculateTotal);
 </script>
 
 @endsection

@@ -12,13 +12,31 @@ use Illuminate\Validation\ValidationException;
 
 class StockAdjustmentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $adjustments = StockAdjustment::with('ingredient')
-            ->latest()
-            ->paginate(10);
+        $filters = $request->validate([
+            'start_date' => ['nullable', 'date_format:Y-m-d'],
+            'end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start_date'],
+        ]);
 
-        return view('stock_adjustments.index', compact('adjustments'));
+        $adjustments = StockAdjustment::with('ingredient')
+            ->when(
+                $filters['start_date'] ?? null,
+                fn($query, $date) => $query->whereDate('adjustment_date', '>=', $date)
+            )
+            ->when(
+                $filters['end_date'] ?? null,
+                fn($query, $date) => $query->whereDate('adjustment_date', '<=', $date)
+            )
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('stock_adjustments.index', [
+            'adjustments' => $adjustments,
+            'startDate' => $filters['start_date'] ?? '',
+            'endDate' => $filters['end_date'] ?? '',
+        ]);
     }
 
     public function create()

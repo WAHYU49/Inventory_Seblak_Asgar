@@ -18,7 +18,29 @@
     </div>
 @endif
 
+@if ($errors->any())
+    <div class="alert alert-danger">
+        @foreach ($errors->all() as $error)
+            <p>{{ $error }}</p>
+        @endforeach
+    </div>
+@endif
+
 <div class="content-card">
+    <form action="{{ route('stock-adjustments.index') }}" method="GET"
+        style="display:flex; flex-wrap:wrap; gap:12px; align-items:end; margin-bottom:20px;">
+        <div class="form-group">
+            <label for="adjustment-start-date">Dari Tanggal</label>
+            <input id="adjustment-start-date" type="date" name="start_date" value="{{ $startDate }}">
+        </div>
+        <div class="form-group">
+            <label for="adjustment-end-date">Sampai Tanggal</label>
+            <input id="adjustment-end-date" type="date" name="end_date" value="{{ $endDate }}">
+        </div>
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="{{ route('stock-adjustments.index') }}" class="btn btn-secondary">Reset</a>
+    </form>
+
     <div class="table-responsive">
         <table class="table">
             <thead>

@@ -7,7 +7,7 @@
 
 <div class="page-header">
     <h1>Edit Produk Menu</h1>
-    <p>Perbarui informasi produk dan harga jual.</p>
+    <p>Perbarui informasi produk menu.</p>
 </div>
 
 <p>
@@ -60,16 +60,6 @@
         <label>Deskripsi</label><br>
         <textarea name="description"
                   rows="4">{{ old('description', $product->description) }}</textarea>
-    </div>
-
-    <div style="margin-bottom: 15px;">
-        <label>Harga Jual (Rp)</label><br>
-        <input type="number"
-               name="selling_price"
-               value="{{ old('selling_price', $product->selling_price) }}"
-               min="0"
-               step="0.01"
-               required>
     </div>
 
     <button type="submit">Simpan Perubahan</button>

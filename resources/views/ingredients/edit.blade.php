@@ -55,13 +55,6 @@
             min="0" step="0.001" required>
     </div>
 
-    <div style="margin-bottom: 15px;">
-        <label>Harga Beli</label><br>
-        <input type="number" name="purchase_price"
-            value="{{ old('purchase_price', $ingredient->purchase_price) }}"
-            min="0" step="0.01">
-    </div>
-
     <button type="submit">Simpan Perubahan</button>
 </form>
 @endsection

@@ -63,16 +63,6 @@
                   rows="4">{{ old('description') }}</textarea>
     </div>
 
-    <div style="margin-bottom: 15px;">
-        <label>Harga Jual (Rp)</label><br>
-        <input type="number"
-               name="selling_price"
-               value="{{ old('selling_price') }}"
-               min="0"
-               step="0.01"
-               required>
-    </div>
-
     <button type="submit">Simpan Produk</button>
 </form>
 

@@ -8,11 +8,31 @@ use Illuminate\Http\Request;
 class IngredientController extends Controller
 {
     // Menampilkan semua bahan baku
-    public function index()
+    public function index(Request $request)
     {
-        $ingredients = Ingredient::latest()->paginate(10);
+        $validated = $request->validate([
+            'stock_status' => ['nullable', 'in:empty,low,safe'],
+        ]);
 
-        return view('ingredients.index', compact('ingredients'));
+        $query = Ingredient::query();
+
+        match ($validated['stock_status'] ?? null) {
+            'empty' => $query->where('is_active', true)
+                ->where('current_stock', '<=', 0),
+            'low' => $query->where('is_active', true)
+                ->where('current_stock', '>', 0)
+                ->whereColumn('current_stock', '<=', 'minimum_stock'),
+            'safe' => $query->where('is_active', true)
+                ->whereColumn('current_stock', '>', 'minimum_stock'),
+            default => null,
+        };
+
+        $ingredients = $query->latest()->paginate(10)->withQueryString();
+
+        return view('ingredients.index', [
+            'ingredients' => $ingredients,
+            'stockStatus' => $validated['stock_status'] ?? '',
+        ]);
     }
 
     // Menampilkan form tambah bahan baku
@@ -30,7 +50,6 @@ class IngredientController extends Controller
             'unit' => 'required|string|max:30',
             'current_stock' => 'required|numeric|min:0',
             'minimum_stock' => 'required|numeric|min:0',
-            'purchase_price' => 'nullable|numeric|min:0',
         ]);
 
         $validated['is_active'] = true;
@@ -56,7 +75,6 @@ class IngredientController extends Controller
             'name' => 'required|string|max:255',
             'unit' => 'required|string|max:30',
             'minimum_stock' => 'required|numeric|min:0',
-            'purchase_price' => 'nullable|numeric|min:0',
         ]);
 
         $ingredient->update($validated);

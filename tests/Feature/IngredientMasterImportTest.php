@@ -52,7 +52,11 @@ class IngredientMasterImportTest extends TestCase
             ->assertSee('Data valid baru: 1')
             ->assertSee('Data valid diperbarui: 1')
             ->assertSee('Baris kosong dilewati: 1')
-            ->assertSee('Baris 5: Nama Barang wajib diisi.');
+            ->assertSee('Baris 5: Nama Barang wajib diisi.')
+            ->assertDontSee('HET')
+            ->assertDontSee('HPP')
+            ->assertDontSee('3000')
+            ->assertDontSee('15000');
 
         $this->assertSame(12.5, (float) $existing->fresh()->current_stock);
         $this->assertDatabaseCount('ingredients', 1);
@@ -105,6 +109,21 @@ class IngredientMasterImportTest extends TestCase
             ->assertSessionHasErrors('file');
 
         $this->assertDatabaseCount('ingredients', 0);
+    }
+
+    public function test_price_headers_are_optional_for_inventory_master_import(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->post(route('ingredients.import.preview'), [
+                'file' => $this->makeWorkbook([
+                    ['SKU ID', 'Nama Barang', 'Kategori', 'Satuan', 'Jumlah / Isi', 'supplier', 'Alokasi'],
+                    ['BB001', 'Kerupuk', 'Snack', 'gram', 1, 'Pemasok A', 'Dapur'],
+                ]),
+            ])
+            ->assertOk()
+            ->assertSee('Kerupuk')
+            ->assertDontSee('HET')
+            ->assertDontSee('HPP');
     }
 
     public function test_import_rejects_a_unit_change_for_an_existing_ingredient(): void

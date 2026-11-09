@@ -71,13 +71,8 @@
 
     .product-grid {
         display: grid;
-        grid-template-columns: 2fr 1fr 1fr;
+        grid-template-columns: 2fr 1fr;
         gap: 15px;
-    }
-
-    .product-price {
-        background: #f3f4f6;
-        color: #374151;
     }
 
     .recipe-info {
@@ -109,12 +104,6 @@
     .sale-summary h3 {
         margin: 0 0 10px;
         color: #166534;
-    }
-
-    .sale-total {
-        font-size: 24px;
-        font-weight: 700;
-        color: #15803d;
     }
 
     .sale-button {
@@ -277,15 +266,7 @@
             </div>
 
             <div class="sale-summary">
-                <h3>Ringkasan Penjualan</h3>
-
-                <div style="color:#374151; margin-bottom:6px;">
-                    Total Transaksi
-                </div>
-
-                <div class="sale-total" id="grandTotal">
-                    Rp 0
-                </div>
+                <h3>Ringkasan Kebutuhan Stok</h3>
 
                 <div id="ingredientSummary" style="margin-top:15px; color:#374151;">
                     Belum ada menu dipilih.
@@ -318,7 +299,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const container = document.getElementById('productContainer');
     const addButton = document.getElementById('addProduct');
-    const grandTotal = document.getElementById('grandTotal');
     const ingredientSummary = document.getElementById('ingredientSummary');
 
     if (!container || !addButton) {
@@ -326,15 +306,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     let rowIndex = 0;
-
-    // Format angka menjadi Rupiah.
-    function formatRupiah(value) {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            maximumFractionDigits: 0
-        }).format(value || 0);
-    }
 
     // Membuat elemen HTML dengan aman.
     function createElement(tag, className, text) {
@@ -409,15 +380,13 @@ document.addEventListener('DOMContentLoaded', function () {
         recipeInfo.appendChild(list);
     }
 
-    // Menghitung total transaksi dan kebutuhan bahan baku.
+    // Menghitung kebutuhan bahan baku.
     function updateSummary() {
-        let total = 0;
         const requirements = {};
 
         container.querySelectorAll('.product-row').forEach(row => {
             const select = row.querySelector('.product-select');
             const quantityInput = row.querySelector('.product-quantity');
-            const priceInput = row.querySelector('.product-price');
 
             const product = products.find(
                 item => String(item.id) === select.value
@@ -432,11 +401,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 Number(quantityInput.value) || 0
             );
 
-            const subtotal = product.price * quantity;
-
-            priceInput.value = formatRupiah(subtotal);
-            total += subtotal;
-
             product.recipe.forEach(item => {
                 if (!requirements[item.name]) {
                     requirements[item.name] = {
@@ -450,8 +414,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     item.quantity * quantity;
             });
         });
-
-        grandTotal.textContent = formatRupiah(total);
 
         ingredientSummary.replaceChildren();
 
@@ -559,7 +521,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const option = createElement(
                 'option',
                 '',
-                product.name + ' - ' + formatRupiah(product.price)
+                product.name
             );
 
             option.value = product.id;
@@ -588,25 +550,8 @@ document.addEventListener('DOMContentLoaded', function () {
         quantityGroup.appendChild(quantityLabel);
         quantityGroup.appendChild(quantityInput);
 
-        // Harga subtotal.
-        const priceGroup = createElement('div', 'sale-form-group');
-        const priceLabel = createElement('label', '', 'Subtotal');
-
-        const priceInput = createElement(
-            'input',
-            'product-price'
-        );
-
-        priceInput.type = 'text';
-        priceInput.value = formatRupiah(0);
-        priceInput.readOnly = true;
-
-        priceGroup.appendChild(priceLabel);
-        priceGroup.appendChild(priceInput);
-
         grid.appendChild(productGroup);
         grid.appendChild(quantityGroup);
-        grid.appendChild(priceGroup);
 
         const recipeInfo = createElement(
             'div',

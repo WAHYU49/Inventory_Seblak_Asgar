@@ -56,16 +56,13 @@ class IngredientMasterExportTest extends TestCase
                 'Kategori',
                 'Satuan',
                 'Jumlah / Isi',
-                'HET',
-                'HPP satuan',
                 'Supplier',
                 'Alokasi',
                 'Satuan Pembelian',
                 'Stok Saat Ini',
                 'Minimum Stok',
-                'Harga Pembelian',
                 'Status Aktif',
-            ], $sheet->rangeToArray('A1:N1', null, false, false)[0]);
+            ], $sheet->rangeToArray('A1:K1', null, false, false)[0]);
 
             $this->assertSame('BB001', $sheet->getCell('A2')->getValue());
             $this->assertSame('Kerupuk Seblak', $sheet->getCell('B2')->getValue());
@@ -75,12 +72,9 @@ class IngredientMasterExportTest extends TestCase
             $this->assertNull($sheet->getCell('F2')->getValue());
             $this->assertNull($sheet->getCell('G2')->getValue());
             $this->assertNull($sheet->getCell('H2')->getValue());
-            $this->assertNull($sheet->getCell('I2')->getValue());
-            $this->assertNull($sheet->getCell('J2')->getValue());
-            $this->assertSame(12.5, (float) $sheet->getCell('K2')->getValue());
-            $this->assertSame(3.0, (float) $sheet->getCell('L2')->getValue());
-            $this->assertSame(1800.0, (float) $sheet->getCell('M2')->getValue());
-            $this->assertSame('Aktif', $sheet->getCell('N2')->getValue());
+            $this->assertSame(12.5, (float) $sheet->getCell('I2')->getValue());
+            $this->assertSame(3.0, (float) $sheet->getCell('J2')->getValue());
+            $this->assertSame('Aktif', $sheet->getCell('K2')->getValue());
         } finally {
             $spreadsheet->disconnectWorksheets();
         }

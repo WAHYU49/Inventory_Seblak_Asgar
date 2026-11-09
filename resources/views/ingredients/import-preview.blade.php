@@ -36,8 +36,6 @@
             <th>Kategori</th>
             <th>Satuan</th>
             <th>Jumlah / Isi</th>
-            <th>HET</th>
-            <th>HPP satuan</th>
             <th>Supplier</th>
             <th>Alokasi</th>
         </tr>
@@ -51,14 +49,12 @@
                 <td>{{ $row['category'] ?? '—' }}</td>
                 <td>{{ $row['unit'] }}</td>
                 <td>{{ $row['package_quantity'] ?? '—' }}</td>
-                <td>{{ $row['het_price'] ?? '—' }}</td>
-                <td>{{ $row['hpp_price'] ?? '—' }}</td>
                 <td>{{ $row['supplier'] ?? '—' }}</td>
                 <td>{{ $row['allocation'] ?? '—' }}</td>
             </tr>
         @empty
             <tr>
-                <td colspan="10">Tidak ada baris valid untuk disimpan.</td>
+                <td colspan="8">Tidak ada baris valid untuk disimpan.</td>
             </tr>
         @endforelse
     </tbody>

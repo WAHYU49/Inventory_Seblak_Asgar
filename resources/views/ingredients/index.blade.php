@@ -32,16 +32,34 @@
     | <a href="{{ route('ingredients.export') }}">Export Excel</a>
 </p>
 
+<form action="{{ route('ingredients.index') }}" method="GET"
+    style="display:flex; flex-wrap:wrap; gap:10px; align-items:end; margin-bottom:20px;">
+    <div>
+        <label for="stock-status">Status Stok</label><br>
+        <select id="stock-status" name="stock_status">
+            <option value="">Semua Status</option>
+            <option value="empty" {{ $stockStatus === 'empty' ? 'selected' : '' }}>Stok Habis</option>
+            <option value="low" {{ $stockStatus === 'low' ? 'selected' : '' }}>Stok Menipis</option>
+            <option value="safe" {{ $stockStatus === 'safe' ? 'selected' : '' }}>Stok Aman</option>
+        </select>
+    </div>
+    <button type="submit">Filter</button>
+    <a href="{{ route('ingredients.index') }}"
+        style="background:#eee; color:#333; padding:6px 10px; text-decoration:none;">
+        Reset
+    </a>
+</form>
+
 <table border="1" cellpadding="10" cellspacing="0" width="100%">
     <thead>
         <tr>
             <th>No.</th>
             <th>Kode</th>
             <th>Nama Bahan</th>
+            <th>Kategori</th>
             <th>Satuan</th>
             <th>Stok Saat Ini</th>
             <th>Stok Minimum</th>
-            <th>Harga Beli</th>
             <th>Status Stok</th>
             <th>Status Data</th>
             <th>Tanggal Input</th>
@@ -58,6 +76,8 @@
 
                 <td>{{ $ingredient->name }}</td>
 
+                <td>{{ $ingredient->category ?? '-' }}</td>
+
                 <td>{{ $ingredient->unit }}</td>
 
                 <td>{{ number_format($ingredient->current_stock, 3, ',', '.') }}</td>
@@ -65,11 +85,9 @@
                 <td>{{ number_format($ingredient->minimum_stock, 3, ',', '.') }}</td>
 
                 <td>
-                    Rp {{ number_format($ingredient->purchase_price ?? 0, 0, ',', '.') }}
-                </td>
-
-                <td>
-                    @if ($ingredient->current_stock <= $ingredient->minimum_stock)
+                    @if ($ingredient->current_stock <= 0)
+                        <span style="color: red; font-weight: bold;">Stok Habis</span>
+                    @elseif ($ingredient->current_stock <= $ingredient->minimum_stock)
                         <span style="color: red; font-weight: bold;">Stok Menipis</span>
                     @else
                         <span style="color: green;">Stok Aman</span>

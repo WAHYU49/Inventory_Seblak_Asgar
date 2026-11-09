@@ -44,9 +44,9 @@
 @endif
 
 <div style="margin-bottom: 20px;">
-    <p>Gunakan sheet pertama dengan header: SKU ID, Nama Barang, Kategori, Satuan, Jumlah / Isi, HET, HPP satuan, supplier, dan Alokasi.</p>
+    <p>Gunakan sheet pertama dengan header master bahan baku: SKU ID, Nama Barang, Kategori, Satuan, Jumlah / Isi, supplier, dan Alokasi. Kolom tambahan bersifat opsional.</p>
     <p>Baris tanpa data akan dilewati. Baris tidak valid ditampilkan pada preview. Nilai opsional yang kosong tidak menghapus data master yang sudah tersimpan.</p>
-    <p><strong>Import ini hanya memperbarui informasi master.</strong> Stok, stok minimum, harga beli, dan riwayat stok tidak diubah.</p>
+    <p><strong>Import ini hanya memperbarui informasi master.</strong> Stok, stok minimum, dan riwayat stok tidak diubah.</p>
 </div>
 
 <form action="{{ route('ingredients.import.preview') }}" method="POST" enctype="multipart/form-data">

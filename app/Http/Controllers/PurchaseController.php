@@ -12,13 +12,31 @@ use Illuminate\Validation\ValidationException;
 
 class PurchaseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $purchases = Purchase::with('details.ingredient')
-            ->latest()
-            ->paginate(10);
+        $filters = $request->validate([
+            'start_date' => ['nullable', 'date_format:Y-m-d'],
+            'end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start_date'],
+        ]);
 
-        return view('purchases.index', compact('purchases'));
+        $purchases = Purchase::with('details.ingredient')
+            ->when(
+                $filters['start_date'] ?? null,
+                fn($query, $date) => $query->whereDate('purchase_date', '>=', $date)
+            )
+            ->when(
+                $filters['end_date'] ?? null,
+                fn($query, $date) => $query->whereDate('purchase_date', '<=', $date)
+            )
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('purchases.index', [
+            'purchases' => $purchases,
+            'startDate' => $filters['start_date'] ?? '',
+            'endDate' => $filters['end_date'] ?? '',
+        ]);
     }
 
     public function create()
@@ -38,7 +56,6 @@ class PurchaseController extends Controller
             'details' => 'required|array|min:1',
             'details.*.ingredient_id' => 'required|distinct|exists:ingredients,id',
             'details.*.quantity' => 'required|numeric|gt:0',
-            'details.*.unit_price' => 'required|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($validated) {
@@ -66,7 +83,7 @@ class PurchaseController extends Controller
                 }
 
                 $quantity = $detail['quantity'];
-                $unitPrice = $detail['unit_price'];
+                $unitPrice = (float) ($ingredient->purchase_price ?? 0);
                 $subtotal = $quantity * $unitPrice;
 
                 // Simpan detail pembelian

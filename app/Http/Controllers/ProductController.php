@@ -33,7 +33,6 @@ class ProductController extends Controller
             'code' => 'required|string|max:50|unique:products,code',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'selling_price' => 'required|numeric|min:0',
             'image' => 'nullable|string|max:255',
         ]);
 
@@ -60,7 +59,6 @@ class ProductController extends Controller
             'code' => 'required|string|max:50|unique:products,code,' . $product->id,
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'selling_price' => 'required|numeric|min:0',
             'image' => 'nullable|string|max:255',
         ]);
 

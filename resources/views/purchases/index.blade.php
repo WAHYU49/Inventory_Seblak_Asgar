@@ -29,6 +29,32 @@
 
     <h3 style="margin-top:0;">Riwayat Pembelian</h3>
 
+    @if ($errors->any())
+        <div style="background:#fde8e8; color:#a52828; padding:12px;
+            border-radius:6px; margin-bottom:15px;">
+            @foreach ($errors->all() as $error)
+                <p>{{ $error }}</p>
+            @endforeach
+        </div>
+    @endif
+
+    <form action="{{ route('purchases.index') }}" method="GET"
+        style="display:flex; flex-wrap:wrap; gap:12px; align-items:end; margin-bottom:20px;">
+        <div>
+            <label for="purchase-start-date">Dari Tanggal</label><br>
+            <input id="purchase-start-date" type="date" name="start_date" value="{{ $startDate }}">
+        </div>
+        <div>
+            <label for="purchase-end-date">Sampai Tanggal</label><br>
+            <input id="purchase-end-date" type="date" name="end_date" value="{{ $endDate }}">
+        </div>
+        <button type="submit">Filter</button>
+        <a href="{{ route('purchases.index') }}"
+            style="background:#eee; color:#333; padding:7px 12px; border-radius:4px; text-decoration:none;">
+            Reset
+        </a>
+    </form>
+
     <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse;">
             <thead>
@@ -37,8 +63,7 @@
                     <th style="padding:12px; text-align:left;">Nomor Pembelian</th>
                     <th style="padding:12px; text-align:left;">Tanggal</th>
                     <th style="padding:12px; text-align:left;">Tanggal Input</th>
-                    <th style="padding:12px; text-align:left;">Jumlah Item</th>
-                    <th style="padding:12px; text-align:left;">Total Pembelian</th>
+                    <th style="padding:12px; text-align:left;">Jumlah Bahan / Kuantitas</th>
                     <th style="padding:12px; text-align:left;">Catatan</th>
                 </tr>
             </thead>
@@ -63,11 +88,14 @@
                         </td>
 
                         <td style="padding:12px;">
-                            {{ $purchase->details->count() }} item
-                        </td>
-
-                        <td style="padding:12px;">
-                            Rp {{ number_format($purchase->total_amount, 0, ',', '.') }}
+                            {{ $purchase->details->count() }} bahan
+                            @foreach ($purchase->details as $detail)
+                                <div>
+                                    {{ $detail->ingredient->name ?? 'Bahan tidak ditemukan' }}:
+                                    {{ rtrim(rtrim(number_format((float) $detail->quantity, 3, ',', '.'), '0'), ',') }}
+                                    {{ $detail->ingredient->unit ?? '' }}
+                                </div>
+                            @endforeach
                         </td>
 
                         <td style="padding:12px;">
@@ -76,7 +104,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" style="padding:20px; text-align:center;">
+                        <td colspan="6" style="padding:20px; text-align:center;">
                             Belum ada transaksi pembelian.
                         </td>
                     </tr>
