@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ingredient;
+use App\Models\StockMovement;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class IngredientController extends Controller
 {
@@ -47,6 +49,7 @@ class IngredientController extends Controller
         $validated = $request->validate([
             'code' => 'required|string|max:50|unique:ingredients,code',
             'name' => 'required|string|max:255',
+            'category' => 'nullable|string|max:255',
             'unit' => 'required|string|max:30',
             'current_stock' => 'required|numeric|min:0',
             'minimum_stock' => 'required|numeric|min:0',
@@ -54,7 +57,21 @@ class IngredientController extends Controller
 
         $validated['is_active'] = true;
 
-        Ingredient::create($validated);
+        DB::transaction(function () use ($validated) {
+            $ingredient = Ingredient::create($validated);
+            $initialStock = (float) $ingredient->current_stock;
+
+            if ($initialStock > 0) {
+                StockMovement::create([
+                    'ingredient_id' => $ingredient->id,
+                    'type' => 'initial',
+                    'quantity' => $initialStock,
+                    'stock_before' => 0,
+                    'stock_after' => $initialStock,
+                    'notes' => 'Stok awal saat bahan baku dibuat.',
+                ]);
+            }
+        });
 
         return redirect()
             ->route('ingredients.index')
@@ -73,9 +90,21 @@ class IngredientController extends Controller
         $validated = $request->validate([
             'code' => 'required|string|max:50|unique:ingredients,code,' . $ingredient->id,
             'name' => 'required|string|max:255',
+            'category' => 'nullable|string|max:255',
             'unit' => 'required|string|max:30',
             'minimum_stock' => 'required|numeric|min:0',
         ]);
+
+        if (
+            $validated['unit'] !== $ingredient->unit
+            && $ingredient->recipeDetails()->exists()
+        ) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'unit' => 'Satuan tidak dapat diubah karena bahan baku sudah digunakan dalam resep.',
+                ]);
+        }
 
         $ingredient->update($validated);
 

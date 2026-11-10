@@ -80,9 +80,9 @@
 
                 <td>{{ $ingredient->unit }}</td>
 
-                <td>{{ number_format($ingredient->current_stock, 3, ',', '.') }}</td>
+                <td>{{ \App\Support\InventoryNumberFormatter::format($ingredient->current_stock) }}</td>
 
-                <td>{{ number_format($ingredient->minimum_stock, 3, ',', '.') }}</td>
+                <td>{{ \App\Support\InventoryNumberFormatter::format($ingredient->minimum_stock) }}</td>
 
                 <td>
                     @if ($ingredient->current_stock <= 0)

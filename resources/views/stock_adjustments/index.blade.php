@@ -88,16 +88,16 @@
                         </td>
 
                         <td>
-                            {{ number_format($adjustment->quantity, 3, ',', '.') }}
+                            {{ \App\Support\InventoryNumberFormatter::format($adjustment->quantity) }}
                             {{ $adjustment->ingredient->unit }}
                         </td>
 
                         <td>
-                            {{ number_format($adjustment->stock_before, 3, ',', '.') }}
+                            {{ \App\Support\InventoryNumberFormatter::format($adjustment->stock_before) }}
                         </td>
 
                         <td>
-                            {{ number_format($adjustment->stock_after, 3, ',', '.') }}
+                            {{ \App\Support\InventoryNumberFormatter::format($adjustment->stock_after) }}
                         </td>
 
                         <td>

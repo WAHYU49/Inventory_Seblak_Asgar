@@ -48,7 +48,11 @@
                 <td>{{ $row['name'] }}</td>
                 <td>{{ $row['category'] ?? '—' }}</td>
                 <td>{{ $row['unit'] }}</td>
-                <td>{{ $row['package_quantity'] ?? '—' }}</td>
+                <td>
+                    {{ $row['package_quantity'] === null
+                        ? '—'
+                        : \App\Support\InventoryNumberFormatter::format($row['package_quantity']) }}
+                </td>
                 <td>{{ $row['supplier'] ?? '—' }}</td>
                 <td>{{ $row['allocation'] ?? '—' }}</td>
             </tr>

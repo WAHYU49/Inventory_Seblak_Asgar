@@ -35,6 +35,13 @@
     </div>
 
     <div style="margin-bottom: 15px;">
+        <label>Kategori</label><br>
+        <input type="text" name="category"
+            value="{{ old('category', $ingredient->category) }}"
+            placeholder="Contoh: Bumbu">
+    </div>
+
+    <div style="margin-bottom: 15px;">
         <label>Satuan</label><br>
         <input type="text" name="unit"
             value="{{ old('unit', $ingredient->unit) }}" required>
@@ -43,7 +50,7 @@
     <div style="margin-bottom: 15px;">
         <label>Stok Saat Ini</label><br>
         <input type="text"
-            value="{{ $ingredient->current_stock }} {{ $ingredient->unit }}"
+            value="{{ \App\Support\InventoryNumberFormatter::format($ingredient->current_stock) }} {{ $ingredient->unit }}"
             readonly>
         <small>Stok diperbarui melalui transaksi pembelian atau penyesuaian stok.</small>
     </div>

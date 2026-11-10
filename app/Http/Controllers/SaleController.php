@@ -6,6 +6,7 @@ use App\Models\Sale;
 use App\Models\Product;
 use App\Models\Ingredient;
 use App\Models\StockMovement;
+use App\Support\InventoryNumberFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -165,8 +166,9 @@ class SaleController extends Controller
                     throw ValidationException::withMessages([
                         'details' => 'Stok ' . $ingredient->name
                             . ' tidak mencukupi. Dibutuhkan: '
-                            . $required . ', tersedia: '
-                            . $ingredient->current_stock,
+                            . InventoryNumberFormatter::format($required)
+                            . ', tersedia: '
+                            . InventoryNumberFormatter::format($ingredient->current_stock),
                     ]);
                 }
             }

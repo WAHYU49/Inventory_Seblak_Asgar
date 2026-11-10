@@ -57,7 +57,7 @@
                 <td>
                     @foreach ($recipe->details as $detail)
                         {{ $detail->ingredient->name ?? 'Bahan tidak ditemukan' }}
-                        ({{ $detail->quantity }} {{ $detail->ingredient->unit ?? '' }})
+                        ({{ \App\Support\InventoryNumberFormatter::format($detail->quantity) }} {{ $detail->ingredient->unit ?? '' }})
                         <br>
                     @endforeach
                 </td>

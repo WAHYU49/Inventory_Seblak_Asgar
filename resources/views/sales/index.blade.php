@@ -88,7 +88,7 @@
                             <div style="margin-bottom:5px;">
                                 {{ $detail->product->name ?? 'Produk tidak tersedia' }}
                                 <span style="color:#777;">
-                                    ({{ rtrim(rtrim(number_format((float) $detail->quantity, 3, ',', '.'), '0'), ',') }} x)
+                                    ({{ \App\Support\InventoryNumberFormatter::format($detail->quantity) }} x)
                                 </span>
                             </div>
                         @endforeach

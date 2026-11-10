@@ -38,7 +38,7 @@
                 @foreach($ingredients as $ingredient)
                     <option
                         value="{{ $ingredient->id }}"
-                        data-stock="{{ $ingredient->current_stock }}"
+                        data-stock="{{ \App\Support\InventoryNumberFormatter::format($ingredient->current_stock) }}"
                         data-unit="{{ $ingredient->unit }}"
                         {{ old('ingredient_id') == $ingredient->id ? 'selected' : '' }}
                     >

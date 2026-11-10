@@ -42,6 +42,7 @@
                         <option value="purchase" {{ request('type') == 'purchase' ? 'selected' : '' }}>Pembelian</option>
                         <option value="sale" {{ request('type') == 'sale' ? 'selected' : '' }}>Penjualan</option>
                         <option value="adjustment" {{ request('type') == 'adjustment' ? 'selected' : '' }}>Penyesuaian</option>
+                        <option value="initial" {{ request('type') == 'initial' ? 'selected' : '' }}>Stok Awal</option>
                     </select>
                 </div>
 
@@ -133,6 +134,10 @@
                                 <span style="background: #fee2e2; color: #991b1b; padding: 5px 9px; border-radius: 5px;">
                                     Penjualan
                                 </span>
+                            @elseif ($movement->type === 'initial')
+                                <span style="background: #dbeafe; color: #1e40af; padding: 5px 9px; border-radius: 5px;">
+                                    Stok Awal
+                                </span>
                             @else
                                 <span style="background: #fef3c7; color: #92400e; padding: 5px 9px; border-radius: 5px;">
                                     Penyesuaian
@@ -141,16 +146,16 @@
                         </td>
 
                         <td style="padding: 13px; text-align: right;">
-                            {{ number_format((float) $movement->quantity, 3, ',', '.') }}
+                            {{ \App\Support\InventoryNumberFormatter::format($movement->quantity) }}
                             {{ $movement->ingredient->unit ?? '' }}
                         </td>
 
                         <td style="padding: 13px; text-align: right;">
-                            {{ number_format((float) $movement->stock_before, 3, ',', '.') }}
+                            {{ \App\Support\InventoryNumberFormatter::format($movement->stock_before) }}
                         </td>
 
                         <td style="padding: 13px; text-align: right;">
-                            {{ number_format((float) $movement->stock_after, 3, ',', '.') }}
+                            {{ \App\Support\InventoryNumberFormatter::format($movement->stock_after) }}
                         </td>
 
                         <td style="padding: 13px;">

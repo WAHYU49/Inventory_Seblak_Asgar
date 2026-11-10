@@ -92,7 +92,7 @@
                             @foreach ($purchase->details as $detail)
                                 <div>
                                     {{ $detail->ingredient->name ?? 'Bahan tidak ditemukan' }}:
-                                    {{ rtrim(rtrim(number_format((float) $detail->quantity, 3, ',', '.'), '0'), ',') }}
+                                    {{ \App\Support\InventoryNumberFormatter::format($detail->quantity) }}
                                     {{ $detail->ingredient->unit ?? '' }}
                                 </div>
                             @endforeach

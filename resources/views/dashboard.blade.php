@@ -282,11 +282,11 @@
                         <td>{{ $ingredient->code }}</td>
                         <td>{{ $ingredient->name }}</td>
                         <td>
-                            {{ $ingredient->current_stock }}
+                            {{ \App\Support\InventoryNumberFormatter::format($ingredient->current_stock) }}
                             {{ $ingredient->unit }}
                         </td>
                         <td>
-                            {{ $ingredient->minimum_stock }}
+                            {{ \App\Support\InventoryNumberFormatter::format($ingredient->minimum_stock) }}
                             {{ $ingredient->unit }}
                         </td>
                         <td class="stock-warning">Stok Menipis</td>
@@ -333,7 +333,7 @@
                                 @foreach ($purchase->details as $detail)
                                     <div>
                                         {{ $detail->ingredient->name ?? 'Bahan tidak ditemukan' }}:
-                                        {{ rtrim(rtrim(number_format((float) $detail->quantity, 3, ',', '.'), '0'), ',') }}
+                                        {{ \App\Support\InventoryNumberFormatter::format($detail->quantity) }}
                                         {{ $detail->ingredient->unit ?? '' }}
                                     </div>
                                 @endforeach
@@ -375,7 +375,7 @@
                                 @foreach ($sale->details as $detail)
                                     <div>
                                         {{ $detail->product->name ?? 'Produk tidak ditemukan' }}:
-                                        {{ rtrim(rtrim(number_format((float) $detail->quantity, 3, ',', '.'), '0'), ',') }}
+                                        {{ \App\Support\InventoryNumberFormatter::format($detail->quantity) }}
                                     </div>
                                 @endforeach
                             </td>
@@ -416,7 +416,7 @@
                             <td>{{ $adjustment->ingredient->name ?? 'Bahan tidak ditemukan' }}</td>
                             <td>
                                 {{ $adjustment->type === 'increase' ? 'Penambahan' : 'Pengurangan' }}:
-                                {{ rtrim(rtrim(number_format((float) $adjustment->quantity, 3, ',', '.'), '0'), ',') }}
+                                {{ \App\Support\InventoryNumberFormatter::format($adjustment->quantity) }}
                                 {{ $adjustment->ingredient->unit ?? '' }}
                             </td>
                             <td>{{ $adjustment->reason }}{{ $adjustment->notes ? ' - ' . $adjustment->notes : '' }}</td>

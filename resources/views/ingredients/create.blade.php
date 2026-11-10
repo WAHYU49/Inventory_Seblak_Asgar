@@ -34,6 +34,12 @@
     </div>
 
     <div style="margin-bottom: 15px;">
+        <label>Kategori</label><br>
+        <input type="text" name="category" value="{{ old('category') }}"
+            placeholder="Contoh: Bumbu">
+    </div>
+
+    <div style="margin-bottom: 15px;">
         <label>Satuan</label><br>
         <input type="text" name="unit" value="{{ old('unit') }}"
             placeholder="Contoh: gram, kg, pcs, bungkus" required>

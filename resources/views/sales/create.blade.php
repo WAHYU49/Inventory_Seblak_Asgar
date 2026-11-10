@@ -306,6 +306,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     let rowIndex = 0;
+    const formatQuantity = value => new Intl.NumberFormat('id-ID', {
+        maximumFractionDigits: 3
+    }).format(value);
 
     // Membuat elemen HTML dengan aman.
     function createElement(tag, className, text) {
@@ -364,11 +367,11 @@ document.addEventListener('DOMContentLoaded', function () {
         product.recipe.forEach(item => {
             const text = item.name
                 + ': '
-                + item.quantity
+                + formatQuantity(item.quantity)
                 + ' '
                 + item.unit
                 + ' (stok tersedia: '
-                + item.stock
+                + formatQuantity(item.stock)
                 + ' '
                 + item.unit
                 + ')';
@@ -445,11 +448,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const text = name
                 + ': '
-                + item.quantity.toFixed(3)
+                + formatQuantity(item.quantity)
                 + ' '
                 + item.unit
                 + ' / stok '
-                + item.stock
+                + formatQuantity(item.stock)
                 + ' '
                 + item.unit
                 + (insufficient ? ' - STOK TIDAK CUKUP' : '');
