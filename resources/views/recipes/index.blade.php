@@ -38,7 +38,7 @@
             <th>Nama Resep</th>
             <th>Komposisi Bahan</th>
             <th>Status</th>
-            <th>Tanggal Input</th>
+            <th>Waktu Input (WIB)</th>
             <th>Aksi</th>
         </tr>
     </thead>
@@ -66,7 +66,7 @@
                     {{ $recipe->is_active ? 'Aktif' : 'Nonaktif' }}
                 </td>
 
-                <td>{{ $recipe->created_at->format('d-m-Y H:i') }}</td>
+                <td>{{ \App\Support\WibDateTimeFormatter::format($recipe->created_at) }}</td>
 
                 <td>
                     <a href="{{ route('recipes.edit', $recipe->id) }}">Edit</a>

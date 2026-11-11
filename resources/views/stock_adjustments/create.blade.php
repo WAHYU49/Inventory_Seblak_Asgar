@@ -22,7 +22,7 @@
                 type="date"
                 name="adjustment_date"
                 id="adjustment_date"
-                value="{{ old('adjustment_date', date('Y-m-d')) }}"
+                value="{{ old('adjustment_date', now('Asia/Jakarta')->toDateString()) }}"
                 required
             >
             @error('adjustment_date')

@@ -47,7 +47,7 @@
                 <tr>
                     <th>No.</th>
                     <th>Tanggal</th>
-                    <th>Tanggal Input</th>
+                    <th>Waktu Input (WIB)</th>
                     <th>No. Penyesuaian</th>
                     <th>Bahan Baku</th>
                     <th>Jenis</th>
@@ -64,11 +64,11 @@
                         <td>{{ $loop->iteration + ($adjustments->currentPage() - 1) * $adjustments->perPage() }}</td>
 
                         <td>
-                            {{ $adjustment->adjustment_date->format('d/m/Y') }}
+                            {{ $adjustment->adjustment_date->format('d-m-Y') }}
                         </td>
 
                         <td>
-                            {{ $adjustment->created_at->format('d/m/Y H:i') }}
+                            {{ \App\Support\WibDateTimeFormatter::format($adjustment->created_at) }}
                         </td>
 
                         <td>

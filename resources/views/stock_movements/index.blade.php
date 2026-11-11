@@ -92,7 +92,7 @@
             <thead style="background: #f5f7f5;">
                 <tr>
                     <th style="padding: 13px; text-align: left;">No</th>
-                    <th style="padding: 13px; text-align: left;">Tanggal</th>
+                    <th style="padding: 13px; text-align: left;">Waktu (WIB)</th>
                     <th style="padding: 13px; text-align: left;">Bahan Baku</th>
                     <th style="padding: 13px; text-align: left;">Jenis</th>
                     <th style="padding: 13px; text-align: right;">Jumlah</th>
@@ -114,7 +114,7 @@
                         </td>
 
                         <td style="padding: 13px;">
-                            {{ $movement->created_at->format('d-m-Y H:i') }}
+                            {{ \App\Support\WibDateTimeFormatter::format($movement->created_at) }}
                         </td>
 
                         <td style="padding: 13px;">

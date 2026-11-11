@@ -235,7 +235,7 @@
                         type="date"
                         id="sale_date"
                         name="sale_date"
-                        value="{{ old('sale_date', date('Y-m-d')) }}"
+                        value="{{ old('sale_date', now('Asia/Jakarta')->toDateString()) }}"
                         required
                     >
                 </div>

@@ -62,7 +62,7 @@
             <th>Stok Minimum</th>
             <th>Status Stok</th>
             <th>Status Data</th>
-            <th>Tanggal Input</th>
+            <th>Waktu Input (WIB)</th>
             <th>Aksi</th>
         </tr>
     </thead>
@@ -98,7 +98,7 @@
                     {{ $ingredient->is_active ? 'Aktif' : 'Nonaktif' }}
                 </td>
 
-                <td>{{ $ingredient->created_at->format('d-m-Y H:i') }}</td>
+                <td>{{ \App\Support\WibDateTimeFormatter::format($ingredient->created_at) }}</td>
 
                 <td>
                     <a href="{{ route('ingredients.edit', $ingredient->id) }}">

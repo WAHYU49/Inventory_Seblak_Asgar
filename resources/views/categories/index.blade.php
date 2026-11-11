@@ -37,7 +37,7 @@
             <th>Nama Kategori</th>
             <th>Deskripsi</th>
             <th>Status</th>
-            <th>Tanggal Input</th>
+            <th>Waktu Input (WIB)</th>
             <th>Aksi</th>
         </tr>
     </thead>
@@ -49,7 +49,7 @@
                 <td>{{ $category->name }}</td>
                 <td>{{ $category->description ?? '-' }}</td>
                 <td>{{ $category->is_active ? 'Aktif' : 'Nonaktif' }}</td>
-                <td>{{ $category->created_at->format('d-m-Y H:i') }}</td>
+                <td>{{ \App\Support\WibDateTimeFormatter::format($category->created_at) }}</td>
                 <td>
                     <a href="{{ route('categories.edit', $category->id) }}">Edit</a>
 

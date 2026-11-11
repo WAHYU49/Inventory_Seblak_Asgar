@@ -57,7 +57,7 @@
                 <th style="padding:13px; text-align:left;">No.</th>
                 <th style="padding:13px; text-align:left;">Nomor Transaksi</th>
                 <th style="padding:13px; text-align:left;">Tanggal</th>
-                <th style="padding:13px; text-align:left;">Tanggal Input</th>
+                <th style="padding:13px; text-align:left;">Waktu Input (WIB)</th>
                 <th style="padding:13px; text-align:left;">Jumlah Produk / Detail Menu</th>
             </tr>
         </thead>
@@ -79,7 +79,7 @@
                     </td>
 
                     <td style="padding:13px;">
-                        {{ $sale->created_at->format('d-m-Y H:i') }}
+                        {{ \App\Support\WibDateTimeFormatter::format($sale->created_at) }}
                     </td>
 
                     <td style="padding:13px;">

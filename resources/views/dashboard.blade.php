@@ -271,7 +271,7 @@
                     <th>Stok Saat Ini</th>
                     <th>Minimum Stok</th>
                     <th>Status</th>
-                    <th>Tanggal Input</th>
+                    <th>Waktu Input (WIB)</th>
                 </tr>
             </thead>
 
@@ -290,7 +290,7 @@
                             {{ $ingredient->unit }}
                         </td>
                         <td class="stock-warning">Stok Menipis</td>
-                        <td>{{ $ingredient->created_at->format('d-m-Y H:i') }}</td>
+                        <td>{{ \App\Support\WibDateTimeFormatter::format($ingredient->created_at) }}</td>
                     </tr>
                 @endforeach
             </tbody>

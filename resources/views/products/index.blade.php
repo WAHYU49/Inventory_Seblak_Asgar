@@ -30,7 +30,7 @@
             <th>Nama Produk</th>
             <th>Kategori</th>
             <th>Status</th>
-            <th>Tanggal Input</th>
+            <th>Waktu Input (WIB)</th>
             <th>Aksi</th>
         </tr>
     </thead>
@@ -43,7 +43,7 @@
                 <td>{{ $product->name }}</td>
                 <td>{{ $product->category->name ?? '-' }}</td>
                 <td>{{ $product->is_active ? 'Aktif' : 'Nonaktif' }}</td>
-                <td>{{ $product->created_at->format('d-m-Y H:i') }}</td>
+                <td>{{ \App\Support\WibDateTimeFormatter::format($product->created_at) }}</td>
                 <td>
                     <a href="{{ route('products.edit', $product->id) }}">Edit</a>
 

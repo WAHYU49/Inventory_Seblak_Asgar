@@ -33,7 +33,7 @@
         <div style="margin-bottom:15px;">
             <label>Tanggal Pembelian</label><br>
             <input type="date" name="purchase_date"
-                value="{{ old('purchase_date', date('Y-m-d')) }}" required>
+                value="{{ old('purchase_date', now('Asia/Jakarta')->toDateString()) }}" required>
         </div>
 
         <div style="margin-bottom:15px;">
