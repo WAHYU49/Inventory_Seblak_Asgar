@@ -22,8 +22,9 @@
             <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: end;">
 
                 <div style="flex: 2; min-width: 180px;">
-                    <label>Cari Bahan Baku</label>
+                    <label for="movement-search">Cari Bahan Baku</label>
                     <input
+                        id="movement-search"
                         type="text"
                         name="search"
                         value="{{ request('search') }}"
@@ -33,8 +34,9 @@
                 </div>
 
                 <div style="flex: 1; min-width: 140px;">
-                    <label>Jenis Transaksi</label>
+                    <label for="movement-type">Jenis Transaksi</label>
                     <select
+                        id="movement-type"
                         name="type"
                         style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 5px;"
                     >
@@ -47,8 +49,9 @@
                 </div>
 
                 <div style="flex: 1; min-width: 140px;">
-                    <label>Dari Tanggal</label>
+                    <label for="movement-start-date">Dari Tanggal</label>
                     <input
+                        id="movement-start-date"
                         type="date"
                         name="start_date"
                         value="{{ request('start_date') }}"
@@ -57,8 +60,9 @@
                 </div>
 
                 <div style="flex: 1; min-width: 140px;">
-                    <label>Sampai Tanggal</label>
+                    <label for="movement-end-date">Sampai Tanggal</label>
                     <input
+                        id="movement-end-date"
                         type="date"
                         name="end_date"
                         value="{{ request('end_date') }}"
@@ -68,14 +72,14 @@
 
                 <button
                     type="submit"
-                    style="background: #166534; color: white; border: none; padding: 11px 18px; border-radius: 5px; cursor: pointer;"
+                    class="btn btn-primary"
                 >
                     Cari
                 </button>
 
                 <a
                     href="{{ route('stock-movements.index') }}"
-                    style="background: #eee; color: #333; padding: 11px 18px; border-radius: 5px; text-decoration: none;"
+                    class="btn btn-secondary"
                 >
                     Reset
                 </a>
@@ -127,19 +131,19 @@
 
                         <td style="padding: 13px;">
                             @if ($movement->type === 'purchase')
-                                <span style="background: #dcfce7; color: #166534; padding: 5px 9px; border-radius: 5px;">
+                                <span class="badge badge-success">
                                     Pembelian
                                 </span>
                             @elseif ($movement->type === 'sale')
-                                <span style="background: #fee2e2; color: #991b1b; padding: 5px 9px; border-radius: 5px;">
+                                <span class="badge badge-danger">
                                     Penjualan
                                 </span>
                             @elseif ($movement->type === 'initial')
-                                <span style="background: #dbeafe; color: #1e40af; padding: 5px 9px; border-radius: 5px;">
+                                <span class="badge badge-info">
                                     Stok Awal
                                 </span>
                             @else
-                                <span style="background: #fef3c7; color: #92400e; padding: 5px 9px; border-radius: 5px;">
+                                <span class="badge badge-warning">
                                     Penyesuaian
                                 </span>
                             @endif

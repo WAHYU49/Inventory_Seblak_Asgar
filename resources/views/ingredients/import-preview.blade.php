@@ -8,7 +8,7 @@
     <p>Periksa ringkasan dan kesalahan sebelum menyimpan data master.</p>
 </div>
 
-<p><a href="{{ route('ingredients.import') }}">← Pilih file lain</a></p>
+<p><a href="{{ route('ingredients.import') }}" class="btn btn-secondary">← Pilih file lain</a></p>
 
 <ul>
     <li>Data valid baru: {{ $newCount }}</li>
@@ -18,15 +18,18 @@
 </ul>
 
 @if ($rowErrors !== [])
+    <div class="alert alert-warning" role="alert">
     <h2>Kesalahan per baris</h2>
     <ul>
         @foreach ($rowErrors as $rowError)
             <li>Baris {{ $rowError['row'] }}: {{ $rowError['message'] }}</li>
         @endforeach
     </ul>
+    </div>
 @endif
 
 <h2>Data valid (maksimal 20 baris pertama)</h2>
+<div class="table-responsive">
 <table border="1" cellpadding="8" cellspacing="0" width="100%">
     <thead>
         <tr>
@@ -63,12 +66,13 @@
         @endforelse
     </tbody>
 </table>
+</div>
 
 @if ($rows !== [])
     <form action="{{ route('ingredients.import.commit') }}" method="POST" style="margin-top: 20px;">
         @csrf
         <input type="hidden" name="token" value="{{ $token }}">
-        <button type="submit" onclick="return confirm('Simpan data master yang valid? Stok tidak akan diubah.')">
+        <button type="submit" class="btn btn-primary" onclick="return confirm('Simpan data master yang valid? Stok tidak akan diubah.')">
             Simpan Data Valid
         </button>
     </form>

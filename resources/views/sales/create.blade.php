@@ -27,7 +27,7 @@
 
     .sale-form-group label {
         display: block;
-        margin-bottom: 7px;
+        margin-bottom: 6px;
         font-weight: 600;
         color: #374151;
     }
@@ -107,52 +107,55 @@
     }
 
     .sale-button {
-        display: inline-block;
-        padding: 11px 18px;
-        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 9px 14px;
+        border: 1px solid transparent;
         border-radius: 6px;
         cursor: pointer;
         font-size: 14px;
         font-weight: 600;
+        line-height: 1.3;
         text-decoration: none;
     }
 
     .sale-button-primary {
-        background: #15803d;
+        background: #183b2b;
         color: white;
     }
 
     .sale-button-primary:hover {
-        background: #166534;
+        background: #28513b;
     }
 
     .sale-button-secondary {
-        background: #e5e7eb;
-        color: #374151;
+        border-color: #d7dfd9;
+        background: #f3f6f4;
+        color: #34483b;
+    }
+
+    .sale-button-secondary:hover {
+        background: #e7ede9;
     }
 
     .sale-button-danger {
         background: #fee2e2;
         color: #b91c1c;
+        min-height: 36px;
         padding: 7px 10px;
+    }
+
+    .sale-button:focus-visible {
+        outline: 3px solid #8bb99b;
+        outline-offset: 2px;
     }
 
     .sale-actions {
         display: flex;
         gap: 10px;
         flex-wrap: wrap;
-    }
-
-    .sale-alert {
-        padding: 13px 16px;
-        border-radius: 6px;
-        margin-bottom: 18px;
-    }
-
-    .sale-alert-error {
-        background: #fef2f2;
-        color: #b91c1c;
-        border: 1px solid #fecaca;
     }
 
     .sale-alert-warning {
@@ -198,14 +201,14 @@
     </div>
 
     @if (session('success'))
-        <div class="sale-alert" style="background:#f0fdf4; color:#166534; border:1px solid #bbf7d0;">
+        <div class="alert alert-success" role="status">
             {{ session('success') }}
         </div>
     @endif
 
     @if ($errors->any())
-        <div class="sale-alert sale-alert-error">
-            <strong>Terjadi kesalahan:</strong>
+        <div class="alert alert-danger" role="alert">
+            <strong>Periksa kembali isian berikut:</strong>
             <ul style="margin:8px 0 0; padding-left:20px;">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -225,7 +228,7 @@
 
         <form action="{{ route('sales.store') }}" method="POST" id="saleForm">
             @csrf
-
+            <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
             <div class="sale-card">
                 <h3>Informasi Penjualan</h3>
 
@@ -238,6 +241,7 @@
                         value="{{ old('sale_date', now('Asia/Jakarta')->toDateString()) }}"
                         required
                     >
+                    @error('sale_date') <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small> @enderror
                 </div>
 
                 <div class="sale-form-group">
@@ -248,6 +252,7 @@
                         rows="3"
                         placeholder="Masukkan catatan transaksi..."
                     >{{ old('notes') }}</textarea>
+                    @error('notes') <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small> @enderror
                 </div>
             </div>
 
@@ -508,8 +513,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const productLabel = createElement('label', '', 'Pilih Menu');
 
         const select = createElement('select', 'product-select');
+        select.id = 'sale-product-' + rowIndex;
         select.name = 'details[' + rowIndex + '][product_id]';
         select.required = true;
+        productLabel.htmlFor = select.id;
 
         const defaultOption = createElement(
             'option',
@@ -543,12 +550,14 @@ document.addEventListener('DOMContentLoaded', function () {
             'product-quantity'
         );
 
+        quantityInput.id = 'sale-quantity-' + rowIndex;
         quantityInput.type = 'number';
         quantityInput.name = 'details[' + rowIndex + '][quantity]';
         quantityInput.min = '1';
         quantityInput.step = '1';
         quantityInput.value = '1';
         quantityInput.required = true;
+        quantityLabel.htmlFor = quantityInput.id;
 
         quantityGroup.appendChild(quantityLabel);
         quantityGroup.appendChild(quantityInput);

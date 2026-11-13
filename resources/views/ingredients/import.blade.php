@@ -8,14 +8,14 @@
     <p>Unggah file Excel untuk memeriksa data terlebih dahulu sebelum disimpan.</p>
 </div>
 
-<p><a href="{{ route('ingredients.index') }}">← Kembali ke Bahan Baku</a></p>
+<p><a href="{{ route('ingredients.index') }}" class="btn btn-secondary">← Kembali ke Bahan Baku</a></p>
 
 @if (session('error'))
-    <p style="color: red;">{{ session('error') }}</p>
+    <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
 @endif
 
 @if ($errors->any())
-    <div style="color: red; margin-bottom: 15px;">
+    <div class="alert alert-danger" role="alert">
         @foreach ($errors->all() as $error)
             <p>{{ $error }}</p>
         @endforeach
@@ -23,7 +23,7 @@
 @endif
 
 @if ($report = session('import_report'))
-    <div style="margin: 15px 0; padding: 15px; border: 1px solid #9ab6a2; background: #eef7f0;">
+    <div class="alert {{ $report['failed'] > 0 ? 'alert-warning' : 'alert-success' }}" role="status">
         <strong>Hasil import</strong>
         <ul>
             <li>Data baru: {{ $report['created'] }}</li>
@@ -43,18 +43,20 @@
     </div>
 @endif
 
-<div style="margin-bottom: 20px;">
+<div class="content-card">
     <p>Gunakan sheet pertama dengan header master bahan baku: SKU ID, Nama Barang, Kategori, Satuan, Jumlah / Isi, supplier, dan Alokasi. Kolom tambahan bersifat opsional.</p>
     <p>Baris tanpa data akan dilewati. Baris tidak valid ditampilkan pada preview. Nilai opsional yang kosong tidak menghapus data master yang sudah tersimpan.</p>
     <p><strong>Import ini hanya memperbarui informasi master.</strong> Stok, stok minimum, dan riwayat stok tidak diubah.</p>
 </div>
 
-<form action="{{ route('ingredients.import.preview') }}" method="POST" enctype="multipart/form-data">
-    @csrf
-    <div style="margin-bottom: 15px;">
-        <label for="file">File Excel (.xlsx atau .xls, maksimal 5 MB)</label><br>
-        <input id="file" type="file" name="file" accept=".xlsx,.xls" required>
-    </div>
-    <button type="submit">Validasi dan Preview</button>
-</form>
+    <form action="{{ route('ingredients.import.preview') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        <div class="form-group">
+            <label for="file">File Excel (.xlsx atau .xls, maksimal 5 MB)</label>
+            <input id="file" type="file" name="file" accept=".xlsx,.xls" required>
+            @error('file') <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small> @enderror
+        </div>
+        <button type="submit" class="btn btn-primary">Validasi dan Preview</button>
+    </form>
+</div>
 @endsection

@@ -9,6 +9,7 @@ class StockAdjustment extends Model
 {
     protected $fillable = [
         'adjustment_number',
+        'idempotency_key',
         'ingredient_id',
         'type',
         'quantity',

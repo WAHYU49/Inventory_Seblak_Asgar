@@ -15,6 +15,11 @@
 <div class="content-card">
     <form action="{{ route('stock-adjustments.store') }}" method="POST">
         @csrf
+        <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
+
+        @error('idempotency_key')
+            <div class="alert alert-danger" role="alert">{{ $message }}</div>
+        @enderror
 
         <div class="form-group">
             <label for="adjustment_date">Tanggal Penyesuaian</label>
@@ -26,7 +31,7 @@
                 required
             >
             @error('adjustment_date')
-                <small class="text-danger">{{ $message }}</small>
+                <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small>
             @enderror
         </div>
 
@@ -47,7 +52,7 @@
                 @endforeach
             </select>
             @error('ingredient_id')
-                <small class="text-danger">{{ $message }}</small>
+                <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small>
             @enderror
 
             <small id="current-stock" style="display:block; margin-top:8px; color:#666;">
@@ -67,7 +72,7 @@
                 </option>
             </select>
             @error('type')
-                <small class="text-danger">{{ $message }}</small>
+                <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small>
             @enderror
         </div>
 
@@ -84,7 +89,7 @@
                 required
             >
             @error('quantity')
-                <small class="text-danger">{{ $message }}</small>
+                <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small>
             @enderror
         </div>
 
@@ -106,7 +111,7 @@
                 @endforeach
             </select>
             @error('reason')
-                <small class="text-danger">{{ $message }}</small>
+                <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small>
             @enderror
         </div>
 
@@ -119,7 +124,7 @@
                 placeholder="Tambahkan keterangan jika diperlukan..."
             >{{ old('notes') }}</textarea>
             @error('notes')
-                <small class="text-danger">{{ $message }}</small>
+                <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small>
             @enderror
         </div>
 

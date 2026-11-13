@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Recipe;
 use App\Models\Product;
 use App\Models\Ingredient;
+use App\Models\Category;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -12,14 +14,48 @@ use Illuminate\Validation\Rule;
 class RecipeController extends Controller
 {
     // Menampilkan daftar resep
-    public function index()
+    public function index(Request $request)
     {
-        $recipes = Recipe::with([
+        $search = $request->query('search');
+        $search = is_string($search) ? trim($search) : '';
+        $categoryId = $request->query('category_id');
+        $categoryId = is_string($categoryId) || is_int($categoryId)
+            ? filter_var($categoryId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])
+            : false;
+        $status = $request->query('status');
+        $status = in_array($status, ['active', 'inactive'], true) ? $status : '';
+
+        $query = Recipe::with([
             'product',
             'details.ingredient'
-        ])->latest()->paginate(10);
+        ]);
 
-        return view('recipes.index', compact('recipes'));
+        if ($search !== '') {
+            $query->whereHas('product', function (Builder $productQuery) use ($search) {
+                $productQuery->where('name', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($categoryId !== false) {
+            $query->whereHas('product', function (Builder $productQuery) use ($categoryId) {
+                $productQuery->where('category_id', $categoryId);
+            });
+        }
+
+        if ($status !== '') {
+            $query->where('is_active', $status === 'active');
+        }
+
+        $recipes = $query->latest()->paginate(10)->withQueryString();
+        $categories = Category::orderBy('name')->get();
+
+        return view('recipes.index', compact(
+            'recipes',
+            'categories',
+            'search',
+            'categoryId',
+            'status'
+        ));
     }
 
     // Menampilkan form tambah resep

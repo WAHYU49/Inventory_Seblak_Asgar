@@ -178,6 +178,9 @@
                 required
                 autofocus
             >
+            @error('email')
+                <small style="display:block; margin-top:5px; color:#b91c1c;">{{ $message }}</small>
+            @enderror
         </div>
 
         <div class="form-group">
@@ -189,10 +192,13 @@
                 placeholder="Masukkan password"
                 required
             >
+            @error('password')
+                <small style="display:block; margin-top:5px; color:#b91c1c;">{{ $message }}</small>
+            @enderror
         </div>
 
-        <label class="remember">
-            <input type="checkbox" name="remember" value="1">
+        <label class="remember" for="remember">
+            <input id="remember" type="checkbox" name="remember" value="1">
             Ingat saya
         </label>
 

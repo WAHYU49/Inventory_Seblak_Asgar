@@ -9,39 +9,38 @@
     <h1>Tambah Kategori Menu</h1>
     <p>Tambahkan kategori baru untuk mengelompokkan produk menu.</p>
 </div>
-
-<p>
-    <a href="{{ route('categories.index') }}">← Kembali ke Kategori</a>
-</p>
+<p><a href="{{ route('categories.index') }}" class="btn btn-secondary">← Kembali ke Kategori</a></p>
 
 @if ($errors->any())
-    <div style="color: red;">
+    <div class="alert alert-danger" role="alert">
+        <strong>Periksa kembali isian berikut:</strong>
         @foreach ($errors->all() as $error)
             <p>{{ $error }}</p>
         @endforeach
     </div>
 @endif
 
-<form action="{{ route('categories.store') }}" method="POST">
-    @csrf
+<div class="content-card">
+    <form action="{{ route('categories.store') }}" method="POST">
+        @csrf
 
-    <div style="margin-bottom: 15px;">
-        <label>Nama Kategori</label><br>
-        <input type="text"
-               name="name"
-               value="{{ old('name') }}"
-               placeholder="Contoh: Seblak"
-               required>
-    </div>
+        <div class="form-group">
+            <label for="name">Nama Kategori</label>
+            <input id="name" type="text" name="name" value="{{ old('name') }}"
+                placeholder="Contoh: Seblak" required>
+            @error('name') <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small> @enderror
+        </div>
 
-    <div style="margin-bottom: 15px;">
-        <label>Deskripsi</label><br>
-        <textarea name="description"
-                  rows="4"
-                  placeholder="Keterangan kategori">{{ old('description') }}</textarea>
-    </div>
+        <div class="form-group">
+            <label for="description">Deskripsi</label>
+            <textarea id="description" name="description" rows="4"
+                placeholder="Keterangan kategori">{{ old('description') }}</textarea>
+            @error('description') <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small> @enderror
+        </div>
 
-    <button type="submit">Simpan Kategori</button>
-</form>
+        <button type="submit" class="btn btn-primary">Simpan Kategori</button>
+        <a href="{{ route('categories.index') }}" class="btn btn-secondary">Batal</a>
+    </form>
+</div>
 
 @endsection

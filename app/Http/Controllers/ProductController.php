@@ -8,13 +8,44 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::with('category')
-            ->latest()
-            ->paginate(10);
+        $search = $request->query('search');
+        $search = is_string($search) ? trim($search) : '';
+        $categoryId = $request->query('category_id');
+        $categoryId = is_string($categoryId) || is_int($categoryId)
+            ? filter_var($categoryId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])
+            : false;
+        $status = $request->query('status');
+        $status = in_array($status, ['active', 'inactive'], true) ? $status : '';
 
-        return view('products.index', compact('products'));
+        $query = Product::with('category');
+
+        if ($search !== '') {
+            $query->where(function ($productQuery) use ($search) {
+                $productQuery->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('code', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($categoryId !== false) {
+            $query->where('category_id', $categoryId);
+        }
+
+        if ($status !== '') {
+            $query->where('is_active', $status === 'active');
+        }
+
+        $products = $query->latest()->paginate(10)->withQueryString();
+        $categories = Category::orderBy('name')->get();
+
+        return view('products.index', compact(
+            'products',
+            'categories',
+            'search',
+            'categoryId',
+            'status'
+        ));
     }
 
     public function create()

@@ -1,123 +1,18 @@
-<style>
-    * {
-        box-sizing: border-box;
-    }
+<button
+    type="button"
+    class="sidebar-overlay"
+    aria-label="Tutup navigasi"
+    aria-hidden="true"
+    tabindex="-1"
+></button>
 
-    body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #f4f6f5;
-    }
-
-    .sidebar {
-        width: 250px;
-        height: 100vh;
-        background: #183b2b;
-        color: white;
-        position: fixed;
-        top: 0;
-        left: 0;
-        padding: 25px 15px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .sidebar-brand {
-        font-size: 19px;
-        font-weight: bold;
-        padding: 0 12px 25px;
-        border-bottom: 1px solid #41614e;
-        margin-bottom: 25px;
-        line-height: 1.5;
-    }
-
-    .sidebar-title {
-        font-size: 11px;
-        color: #a8c0b0;
-        margin: 20px 12px 10px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .sidebar a {
-        display: block;
-        color: #dce8df;
-        text-decoration: none;
-        padding: 12px 15px;
-        margin-bottom: 5px;
-        border-radius: 6px;
-        font-size: 14px;
-        transition: 0.2s;
-    }
-
-    .sidebar a:hover {
-        background: #28513b;
-        color: white;
-    }
-
-    .sidebar a.active {
-        background: #3d7956;
-        color: white;
-        font-weight: bold;
-    }
-
-    .sidebar-footer {
-        margin-top: auto;
-        border-top: 1px solid #41614e;
-        padding-top: 18px;
-    }
-
-    .admin-info {
-        padding: 0 12px 12px;
-        color: #dce8df;
-        font-size: 13px;
-        line-height: 1.6;
-    }
-
-    .admin-info small {
-        color: #a8c0b0;
-    }
-
-    .logout-button {
-        width: 100%;
-        padding: 12px 15px;
-        background: #a83232;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-size: 14px;
-        text-align: left;
-        cursor: pointer;
-    }
-
-    .logout-button:hover {
-        background: #c03939;
-    }
-
-    .main-content {
-        margin-left: 250px;
-        padding: 30px;
-        min-height: 100vh;
-    }
-
-    @media (max-width: 768px) {
-        .sidebar {
-            width: 190px;
-        }
-
-        .main-content {
-            margin-left: 190px;
-            padding: 15px;
-        }
-    }
-</style>
-
-<aside class="sidebar">
+<aside class="sidebar" id="app-sidebar" aria-label="Navigasi utama">
 
     <div class="sidebar-brand">
-        INVENTORY<br>
-        SEBLAK ASGAR
+        <span>INVENTORY<br>SEBLAK ASGAR</span>
+        <button type="button" class="sidebar-close" aria-label="Tutup navigasi">
+            <span aria-hidden="true">&times;</span>
+        </button>
     </div>
 
     <div class="sidebar-title">Menu Utama</div>

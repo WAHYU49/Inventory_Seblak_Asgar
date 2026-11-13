@@ -6,11 +6,11 @@ use App\Models\Category;
 use App\Models\Ingredient;
 use App\Models\Product;
 use App\Models\Purchase;
-use App\Models\PurchaseDetail;
 use App\Models\Recipe;
 use App\Models\RecipeDetail;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class InventoryOnlyFormsTest extends TestCase
@@ -93,6 +93,7 @@ class InventoryOnlyFormsTest extends TestCase
             ->assertDontSee('unit_price');
 
         $this->post(route('purchases.store'), [
+            'idempotency_key' => (string) Str::uuid(),
             'purchase_date' => '2026-03-10',
             'details' => [
                 ['ingredient_id' => $ingredient->id, 'quantity' => 2],

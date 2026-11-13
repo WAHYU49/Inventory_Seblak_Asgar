@@ -11,15 +11,15 @@
 </div>
 
 @if (session('success'))
-    <p style="color: green;">{{ session('success') }}</p>
+    <div class="alert alert-success" role="status">{{ session('success') }}</div>
 @endif
 
 @if (session('error'))
-    <p style="color: red;">{{ session('error') }}</p>
+    <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
 @endif
 
 @if ($errors->any())
-    <div style="color: red;">
+    <div class="alert alert-danger" role="alert">
         @foreach ($errors->all() as $error)
             <p>{{ $error }}</p>
         @endforeach
@@ -27,9 +27,9 @@
 @endif
 
 <p>
-    <a href="{{ route('ingredients.create') }}">+ Tambah Bahan Baku</a>
-    | <a href="{{ route('ingredients.import') }}">Import Master Bahan Baku</a>
-    | <a href="{{ route('ingredients.export') }}">Export Excel</a>
+    <a href="{{ route('ingredients.create') }}" class="btn btn-primary">+ Tambah Bahan Baku</a>
+    <a href="{{ route('ingredients.import') }}" class="btn btn-secondary">Import Master Bahan Baku</a>
+    <a href="{{ route('ingredients.export') }}" class="btn btn-secondary">Export Excel</a>
 </p>
 
 <form action="{{ route('ingredients.index') }}" method="GET"
@@ -43,13 +43,11 @@
             <option value="safe" {{ $stockStatus === 'safe' ? 'selected' : '' }}>Stok Aman</option>
         </select>
     </div>
-    <button type="submit">Filter</button>
-    <a href="{{ route('ingredients.index') }}"
-        style="background:#eee; color:#333; padding:6px 10px; text-decoration:none;">
-        Reset
-    </a>
+    <button type="submit" class="btn btn-primary">Filter</button>
+    <a href="{{ route('ingredients.index') }}" class="btn btn-secondary">Reset</a>
 </form>
 
+<div class="table-responsive">
 <table border="1" cellpadding="10" cellspacing="0" width="100%">
     <thead>
         <tr>
@@ -86,22 +84,24 @@
 
                 <td>
                     @if ($ingredient->current_stock <= 0)
-                        <span style="color: red; font-weight: bold;">Stok Habis</span>
+                        <span class="badge badge-danger">Stok Habis</span>
                     @elseif ($ingredient->current_stock <= $ingredient->minimum_stock)
-                        <span style="color: red; font-weight: bold;">Stok Menipis</span>
+                        <span class="badge badge-warning">Stok Menipis</span>
                     @else
-                        <span style="color: green;">Stok Aman</span>
+                        <span class="badge badge-success">Stok Aman</span>
                     @endif
                 </td>
 
                 <td>
-                    {{ $ingredient->is_active ? 'Aktif' : 'Nonaktif' }}
+                    <span class="badge {{ $ingredient->is_active ? 'badge-success' : 'badge-secondary' }}">
+                        {{ $ingredient->is_active ? 'Aktif' : 'Nonaktif' }}
+                    </span>
                 </td>
 
                 <td>{{ \App\Support\WibDateTimeFormatter::format($ingredient->created_at) }}</td>
 
                 <td>
-                    <a href="{{ route('ingredients.edit', $ingredient->id) }}">
+                    <a href="{{ route('ingredients.edit', $ingredient->id) }}" class="btn btn-secondary">
                         Edit
                     </a>
 
@@ -113,7 +113,7 @@
                             @csrf
                             @method('DELETE')
 
-                            <button type="submit">Nonaktifkan</button>
+                            <button type="submit" class="btn btn-danger">Nonaktifkan</button>
                         </form>
                     @endif
                 </td>
@@ -125,6 +125,7 @@
         @endforelse
     </tbody>
 </table>
+</div>
 
 <div style="margin-top: 20px;">
     {{ $ingredients->links() }}

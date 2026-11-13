@@ -9,6 +9,7 @@ class Purchase extends Model
 {
     protected $fillable = [
         'purchase_number',
+        'idempotency_key',
         'purchase_date',
         'total_amount',
         'notes',

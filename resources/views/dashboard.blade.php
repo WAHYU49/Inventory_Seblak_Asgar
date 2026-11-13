@@ -10,8 +10,7 @@
 </div>
 
 @if ($errors->any())
-    <div style="background:#fde8e8; color:#a52828; padding:12px;
-        border-radius:6px; margin-bottom:15px;">
+    <div class="alert alert-danger" role="alert">
         @foreach ($errors->all() as $error)
             <p>{{ $error }}</p>
         @endforeach
@@ -29,11 +28,8 @@
             <label for="dashboard-end-date">Tanggal Akhir</label><br>
             <input id="dashboard-end-date" type="date" name="end_date" value="{{ $endDate }}">
         </div>
-        <button type="submit">Filter</button>
-        <a href="{{ route('dashboard') }}"
-            style="background:#eee; color:#333; padding:7px 12px; border-radius:4px; text-decoration:none;">
-            Reset
-        </a>
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="{{ route('dashboard') }}" class="btn btn-secondary">Reset</a>
     </form>
 </div>
 
@@ -69,35 +65,9 @@
         color: #183b2b;
     }
 
-    .dashboard-section {
-        background: white;
-        padding: 22px;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        margin-bottom: 25px;
-    }
-
     .dashboard-section h2 {
         margin-top: 0;
         font-size: 18px;
-    }
-
-    .dashboard-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .dashboard-table th,
-    .dashboard-table td {
-        padding: 12px;
-        text-align: left;
-        border-bottom: 1px solid #eee;
-    }
-
-    .dashboard-table th {
-        background: #f4f6f5;
-        color: #526258;
-        font-size: 13px;
     }
 
     .stock-warning {
@@ -122,18 +92,10 @@
         }
     }
 
-    .stock-chart {
-    background: white;
-    padding: 22px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    margin-bottom: 25px;
-}
-
-.stock-chart h2 {
-    margin-top: 0;
-    font-size: 18px;
-}
+    .stock-chart h2 {
+        margin-top: 0;
+        font-size: 18px;
+    }
 
 .chart-item {
     margin-bottom: 20px;
@@ -262,6 +224,7 @@
 
     @if ($lowStockList->count() > 0)
 
+        <div class="table-responsive">
         <table class="dashboard-table">
             <thead>
                 <tr>
@@ -295,6 +258,7 @@
                 @endforeach
             </tbody>
         </table>
+        </div>
 
     @else
 

@@ -10,28 +10,26 @@
         </p>
     </div>
 
-    <a href="{{ route('sales.create') }}"
-       style="background:#183b2b; color:white; padding:12px 18px; border-radius:7px; text-decoration:none; font-size:14px;">
+    <a href="{{ route('sales.create') }}" class="btn btn-primary">
         + Tambah Penjualan
     </a>
 </div>
 
 @if(session('success'))
-    <div style="background:#dcfce7; color:#166534; padding:13px; border-radius:7px; margin-bottom:20px;">
+    <div class="alert alert-success" role="status">
         {{ session('success') }}
     </div>
 @endif
 
 @if ($errors->any())
-    <div style="background:#fde8e8; color:#a52828; padding:12px;
-        border-radius:6px; margin-bottom:15px;">
+    <div class="alert alert-danger" role="alert">
         @foreach ($errors->all() as $error)
             <p>{{ $error }}</p>
         @endforeach
     </div>
 @endif
 
-<div style="background:white; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.04); overflow-x:auto;">
+<div class="content-card">
 
     <form action="{{ route('sales.index') }}" method="GET"
         style="display:flex; flex-wrap:wrap; gap:12px; align-items:end; margin-bottom:20px;">
@@ -43,13 +41,11 @@
             <label for="sale-end-date">Sampai Tanggal</label><br>
             <input id="sale-end-date" type="date" name="end_date" value="{{ $endDate }}">
         </div>
-        <button type="submit">Filter</button>
-        <a href="{{ route('sales.index') }}"
-            style="background:#eee; color:#333; padding:7px 12px; border-radius:4px; text-decoration:none;">
-            Reset
-        </a>
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="{{ route('sales.index') }}" class="btn btn-secondary">Reset</a>
     </form>
 
+    <div class="table-responsive">
     <table style="width:100%; border-collapse:collapse; font-size:14px;">
 
         <thead>
@@ -105,6 +101,7 @@
         </tbody>
 
     </table>
+    </div>
 
     <div style="margin-top:20px;">
         {{ $sales->links() }}

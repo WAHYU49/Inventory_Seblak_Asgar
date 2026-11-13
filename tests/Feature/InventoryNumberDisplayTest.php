@@ -14,6 +14,7 @@ use App\Models\StockAdjustment;
 use App\Models\StockMovement;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class InventoryNumberDisplayTest extends TestCase
@@ -138,6 +139,7 @@ class InventoryNumberDisplayTest extends TestCase
 
         $this->from(route('sales.create'))
             ->post(route('sales.store'), [
+                'idempotency_key' => (string) Str::uuid(),
                 'sale_date' => '2026-11-10',
                 'details' => [
                     ['product_id' => $product->id, 'quantity' => 2],
