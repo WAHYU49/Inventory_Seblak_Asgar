@@ -1,25 +1,22 @@
 @extends('layouts.app')
 
+@section('title', 'Penyesuaian Stok - Inventory Seblak Asgar')
+
 @section('content')
 <div class="page-header">
-    <div>
-        <h2>Penyesuaian Stok</h2>
-        <p>Kelola penambahan dan pengurangan stok bahan baku.</p>
-    </div>
-
-    <a href="{{ route('stock-adjustments.create') }}" class="btn btn-primary">
-        + Tambah Penyesuaian
-    </a>
+    <h1>Penyesuaian Stok</h1>
+    <p>Kelola penambahan dan pengurangan stok bahan baku.</p>
 </div>
+<p><a href="{{ route('stock-adjustments.create') }}" class="btn btn-primary">+ Tambah Penyesuaian</a></p>
 
 @if(session('success'))
-    <div class="alert alert-success">
+    <div class="alert alert-success" role="status">
         {{ session('success') }}
     </div>
 @endif
 
 @if ($errors->any())
-    <div class="alert alert-danger">
+    <div class="alert alert-danger" role="alert">
         @foreach ($errors->all() as $error)
             <p>{{ $error }}</p>
         @endforeach
@@ -28,12 +25,12 @@
 
 <div class="content-card">
     <form action="{{ route('stock-adjustments.index') }}" method="GET"
-        style="display:flex; flex-wrap:wrap; gap:12px; align-items:end; margin-bottom:20px;">
-        <div class="form-group">
+        class="filter-form">
+        <div class="filter-field">
             <label for="adjustment-start-date">Dari Tanggal</label>
             <input id="adjustment-start-date" type="date" name="start_date" value="{{ $startDate }}">
         </div>
-        <div class="form-group">
+        <div class="filter-field">
             <label for="adjustment-end-date">Sampai Tanggal</label>
             <input id="adjustment-end-date" type="date" name="end_date" value="{{ $endDate }}">
         </div>
@@ -42,18 +39,18 @@
     </form>
 
     <div class="table-responsive">
-        <table class="table">
+        <table>
             <thead>
                 <tr>
-                    <th>No.</th>
+                    <th class="table-number">No.</th>
                     <th>Tanggal</th>
                     <th>Waktu Input (WIB)</th>
                     <th>No. Penyesuaian</th>
                     <th>Bahan Baku</th>
                     <th>Jenis</th>
-                    <th>Jumlah</th>
-                    <th>Stok Sebelum</th>
-                    <th>Stok Sesudah</th>
+                    <th class="table-number">Jumlah</th>
+                    <th class="table-number">Stok Sebelum</th>
+                    <th class="table-number">Stok Sesudah</th>
                     <th>Alasan</th>
                 </tr>
             </thead>
@@ -61,7 +58,7 @@
             <tbody>
                 @forelse($adjustments as $adjustment)
                     <tr>
-                        <td>{{ $loop->iteration + ($adjustments->currentPage() - 1) * $adjustments->perPage() }}</td>
+                        <td class="table-number">{{ $loop->iteration + ($adjustments->currentPage() - 1) * $adjustments->perPage() }}</td>
 
                         <td>
                             {{ $adjustment->adjustment_date->format('d-m-Y') }}
@@ -87,16 +84,16 @@
                             @endif
                         </td>
 
-                        <td>
+                        <td class="table-number">
                             {{ \App\Support\InventoryNumberFormatter::format($adjustment->quantity) }}
                             {{ $adjustment->ingredient->unit }}
                         </td>
 
-                        <td>
+                        <td class="table-number">
                             {{ \App\Support\InventoryNumberFormatter::format($adjustment->stock_before) }}
                         </td>
 
-                        <td>
+                        <td class="table-number">
                             {{ \App\Support\InventoryNumberFormatter::format($adjustment->stock_after) }}
                         </td>
 
@@ -106,7 +103,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" style="text-align: center; padding: 25px;">
+                        <td colspan="10">
                             Belum ada data penyesuaian stok.
                         </td>
                     </tr>
@@ -115,8 +112,6 @@
         </table>
     </div>
 
-    <div style="margin-top: 20px;">
-        {{ $adjustments->links() }}
-    </div>
+    {{ $adjustments->links() }}
 </div>
 @endsection

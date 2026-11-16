@@ -258,6 +258,52 @@
             font-weight: 600;
         }
 
+        .main-content .field-error {
+            display: block;
+            margin-top: 5px;
+            color: #b91c1c;
+            font-size: 13px;
+        }
+
+        .main-content .field-help {
+            display: block;
+            margin-top: 8px;
+            color: #526258;
+            font-size: 13px;
+        }
+
+        .main-content [aria-invalid="true"] {
+            border-color: #b91c1c;
+        }
+
+        .main-content [aria-invalid="true"]:focus {
+            outline-color: #fecaca;
+        }
+
+        .main-content .form-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .main-content .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: end;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .main-content .filter-field {
+            flex: 1 1 160px;
+            min-width: 0;
+        }
+
+        .main-content .filter-field-wide {
+            flex: 2 1 220px;
+        }
+
         .main-content input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
         .main-content select,
         .main-content textarea {
@@ -287,8 +333,18 @@
 
         .table-responsive {
             width: 100%;
+            min-width: 0;
+            max-width: 100%;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
+        }
+
+        .table-responsive > table {
+            min-width: 720px;
+        }
+
+        .table-responsive > table.table-wide {
+            min-width: 1000px;
         }
 
         .main-content table {
@@ -309,6 +365,23 @@
             background: #f3f6f4;
             color: #34483b;
             font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .main-content table .table-number {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .main-content table .table-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            min-width: 150px;
+        }
+
+        .main-content table .table-actions .btn {
             white-space: nowrap;
         }
 
@@ -382,7 +455,19 @@
             align-items: center;
         }
 
+        .main-content nav[role="navigation"] > div:last-child {
+            flex: 1 1 100%;
+            justify-content: space-between;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .main-content nav[role="navigation"] > div:last-child > div:first-child p {
+            margin: 0;
+        }
+
         .main-content nav[role="navigation"] a,
+        .main-content nav[role="navigation"] > div:first-child > span,
         .main-content nav[role="navigation"] [aria-current="page"] > span,
         .main-content nav[role="navigation"] [aria-disabled="true"] > span {
             display: inline-flex;
@@ -561,10 +646,16 @@
 
             .main-content nav[role="navigation"] > div:first-child {
                 display: flex;
+                flex: 1 1 100%;
                 gap: 8px;
+                justify-content: space-between;
             }
 
             .main-content nav[role="navigation"] > div:last-child {
+                flex: 1 1 100%;
+            }
+
+            .main-content nav[role="navigation"] > div:last-child > div:last-child {
                 display: none;
             }
         }
@@ -583,7 +674,7 @@
 
     @include('layouts.navbar')
 
-    <main class="main-content">
+    <main class="main-content" id="app-main-content">
         <div class="mobile-menu-bar">
             <button
                 type="button"
@@ -608,19 +699,24 @@
             const toggle = document.querySelector('.mobile-menu-toggle');
             const overlay = document.querySelector('.sidebar-overlay');
             const closeButton = document.querySelector('.sidebar-close');
+            const mainContent = document.getElementById('app-main-content');
             const mobileLayout = window.matchMedia('(max-width: 1023px)');
 
-            const setSidebarOpen = (isOpen) => {
-                document.body.classList.toggle('sidebar-open', isOpen);
-                sidebar.inert = mobileLayout.matches && !isOpen;
-                sidebar.setAttribute('aria-hidden', String(mobileLayout.matches && !isOpen));
-                overlay?.setAttribute('aria-hidden', String(!isOpen));
-                toggle?.setAttribute('aria-expanded', String(isOpen));
-                toggle?.setAttribute('aria-label', isOpen ? 'Tutup navigasi' : 'Buka navigasi');
+            const setSidebarOpen = (isOpen, restoreFocus = false) => {
+                const drawerOpen = mobileLayout.matches && isOpen;
 
-                if (isOpen) {
+                document.body.classList.toggle('sidebar-open', drawerOpen);
+                sidebar.inert = mobileLayout.matches && !drawerOpen;
+                sidebar.setAttribute('aria-hidden', String(mobileLayout.matches && !drawerOpen));
+                mainContent.inert = drawerOpen;
+                mainContent.setAttribute('aria-hidden', String(drawerOpen));
+                overlay?.setAttribute('aria-hidden', String(!drawerOpen));
+                toggle?.setAttribute('aria-expanded', String(drawerOpen));
+                toggle?.setAttribute('aria-label', drawerOpen ? 'Tutup navigasi' : 'Buka navigasi');
+
+                if (drawerOpen) {
                     closeButton?.focus();
-                } else if (mobileLayout.matches) {
+                } else if (restoreFocus && mobileLayout.matches) {
                     toggle?.focus();
                 }
             };
@@ -631,18 +727,62 @@
                 setSidebarOpen(toggle.getAttribute('aria-expanded') !== 'true');
             });
 
-            overlay?.addEventListener('click', () => setSidebarOpen(false));
-            closeButton?.addEventListener('click', () => setSidebarOpen(false));
+            overlay?.addEventListener('click', () => setSidebarOpen(false, true));
+            closeButton?.addEventListener('click', () => setSidebarOpen(false, true));
 
             sidebar.querySelectorAll('a').forEach((link) => {
-                link.addEventListener('click', () => setSidebarOpen(false));
+                link.addEventListener('click', () => setSidebarOpen(false, true));
             });
 
-            mobileLayout.addEventListener('change', () => setSidebarOpen(false));
+            mobileLayout.addEventListener('change', () => {
+                const activeElement = document.activeElement;
+                const focusWasInSidebar = sidebar.contains(activeElement);
+                const focusWasOnToggle = activeElement === toggle;
+
+                setSidebarOpen(false);
+
+                if (mobileLayout.matches && focusWasInSidebar) {
+                    toggle?.focus();
+                } else if (!mobileLayout.matches && (focusWasInSidebar || focusWasOnToggle)) {
+                    sidebar.querySelector('a[href]')?.focus();
+                }
+            });
 
             document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
-                    setSidebarOpen(false);
+                if (!mobileLayout.matches || !document.body.classList.contains('sidebar-open')) {
+                    return;
+                }
+
+                if (event.key === 'Escape') {
+                    setSidebarOpen(false, true);
+                    return;
+                }
+
+                if (event.key !== 'Tab') {
+                    return;
+                }
+
+                const focusableElements = Array.from(sidebar.querySelectorAll(
+                    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                )).filter((element) => element.getClientRects().length > 0);
+
+                if (focusableElements.length === 0) {
+                    event.preventDefault();
+                    return;
+                }
+
+                const firstElement = focusableElements[0];
+                const lastElement = focusableElements[focusableElements.length - 1];
+
+                if (event.shiftKey && document.activeElement === firstElement) {
+                    event.preventDefault();
+                    lastElement.focus();
+                } else if (!event.shiftKey && document.activeElement === lastElement) {
+                    event.preventDefault();
+                    firstElement.focus();
+                } else if (!sidebar.contains(document.activeElement)) {
+                    event.preventDefault();
+                    firstElement.focus();
                 }
             });
         }

@@ -59,6 +59,52 @@ class DashboardInventoryTest extends TestCase
             ->assertDontSee('234567');
     }
 
+    public function test_stock_chart_uses_database_totals_and_shows_an_empty_state(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $this->createIngredient('BB-CHART-SAFE-1', 'Bahan Aman 1', 8, 5);
+        $this->createIngredient('BB-CHART-SAFE-2', 'Bahan Aman 2', 10, 5);
+        $this->createIngredient('BB-CHART-LOW', 'Bahan Menipis', 3, 5);
+        $this->createIngredient('BB-CHART-EMPTY', 'Bahan Habis', 0, 5);
+        $inactiveIngredient = $this->createIngredient('BB-CHART-INACTIVE', 'Bahan Nonaktif', 0, 5);
+        $inactiveIngredient->update(['is_active' => false]);
+
+        $content = $this->get(route('dashboard'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('data-stock-total="4"', $content);
+        $this->assertSame(
+            1,
+            preg_match('/data-stock-category="safe"\s+data-stock-count="2"\s+data-stock-percentage="50"/', $content)
+        );
+        $this->assertSame(
+            1,
+            preg_match('/data-stock-category="low"\s+data-stock-count="1"\s+data-stock-percentage="25"/', $content)
+        );
+        $this->assertSame(
+            1,
+            preg_match('/data-stock-category="empty"\s+data-stock-count="1"\s+data-stock-percentage="25"/', $content)
+        );
+        $this->assertStringContainsString('Aman: 2 bahan (50%)', $content);
+        $this->assertStringContainsString('>4</span>', $content);
+        $this->assertStringNotContainsString('Bahan Nonaktif', $content);
+
+        preg_match_all(
+            '/<li class="stock-chart-legend-item"\s+data-stock-category="[^"]+"\s+data-stock-count="(\d+)"/',
+            $content,
+            $categoryCounts
+        );
+        $this->assertSame(4, array_sum(array_map('intval', $categoryCounts[1])));
+
+        Ingredient::query()->delete();
+
+        $emptyContent = $this->get(route('dashboard'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('data-stock-total="0"', $emptyContent);
+        $this->assertStringContainsString('data-stock-empty="true"', $emptyContent);
+        $this->assertStringNotContainsString('<svg class="stock-donut"', $emptyContent);
+    }
+
     public function test_dashboard_activity_counts_use_transaction_dates_but_stock_status_is_not_filtered(): void
     {
         $this->actingAs(User::factory()->create());

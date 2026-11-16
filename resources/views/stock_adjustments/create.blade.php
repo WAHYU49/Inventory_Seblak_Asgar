@@ -1,21 +1,36 @@
 @extends('layouts.app')
 
+@section('title', 'Tambah Penyesuaian Stok - Inventory Seblak Asgar')
+
 @section('content')
 <div class="page-header">
-    <div>
-        <h2>Tambah Penyesuaian Stok</h2>
-        <p>Catat penambahan atau pengurangan stok bahan baku.</p>
-    </div>
-
-    <a href="{{ route('stock-adjustments.index') }}" class="btn btn-secondary">
-        Kembali
-    </a>
+    <h1>Tambah Penyesuaian Stok</h1>
+    <p>Catat penambahan atau pengurangan stok bahan baku.</p>
 </div>
+<p><a href="{{ route('stock-adjustments.index') }}" class="btn btn-secondary">Kembali</a></p>
 
 <div class="content-card">
+    @if ($ingredients->isEmpty())
+        <div class="alert alert-info" role="status">
+            <strong>Belum ada bahan baku.</strong>
+            <p>Tambahkan bahan baku terlebih dahulu. Penyesuaian belum dapat disimpan tanpa bahan baku.</p>
+            <a href="{{ route('ingredients.create') }}" class="btn btn-primary">Tambah Bahan Baku</a>
+        </div>
+    @endif
+    @php
+        $hasIdempotencyKey = isset($idempotencyKey)
+            && is_string($idempotencyKey)
+            && $idempotencyKey !== '';
+    @endphp
     <form action="{{ route('stock-adjustments.store') }}" method="POST">
         @csrf
-        <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
+        @if ($hasIdempotencyKey)
+            <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
+        @else
+            <div class="alert alert-danger" role="alert">
+                Token transaksi tidak tersedia. Muat ulang halaman sebelum menyimpan penyesuaian.
+            </div>
+        @endif
 
         @error('idempotency_key')
             <div class="alert alert-danger" role="alert">{{ $message }}</div>
@@ -29,15 +44,18 @@
                 id="adjustment_date"
                 value="{{ old('adjustment_date', now('Asia/Jakarta')->toDateString()) }}"
                 required
+                @error('adjustment_date') aria-invalid="true" aria-describedby="adjustment-date-error" @enderror
             >
             @error('adjustment_date')
-                <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small>
+                <small id="adjustment-date-error" class="field-error">{{ $message }}</small>
             @enderror
         </div>
 
         <div class="form-group">
             <label for="ingredient_id">Bahan Baku</label>
-            <select name="ingredient_id" id="ingredient_id" required>
+            <select name="ingredient_id" id="ingredient_id" required
+                {{ $ingredients->isEmpty() ? 'disabled' : '' }}
+                @error('ingredient_id') aria-invalid="true" aria-describedby="ingredient-id-error" @enderror>
                 <option value="">-- Pilih Bahan Baku --</option>
 
                 @foreach($ingredients as $ingredient)
@@ -52,17 +70,18 @@
                 @endforeach
             </select>
             @error('ingredient_id')
-                <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small>
+                <small id="ingredient-id-error" class="field-error">{{ $message }}</small>
             @enderror
 
-            <small id="current-stock" style="display:block; margin-top:8px; color:#666;">
+            <small id="current-stock" class="field-help" aria-live="polite">
                 Pilih bahan baku untuk melihat stok saat ini.
             </small>
         </div>
 
         <div class="form-group">
             <label for="type">Jenis Penyesuaian</label>
-            <select name="type" id="type" required>
+            <select name="type" id="type" required
+                @error('type') aria-invalid="true" aria-describedby="adjustment-type-error" @enderror>
                 <option value="">-- Pilih Jenis --</option>
                 <option value="increase" {{ old('type') == 'increase' ? 'selected' : '' }}>
                     Penambahan Stok
@@ -72,7 +91,7 @@
                 </option>
             </select>
             @error('type')
-                <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small>
+                <small id="adjustment-type-error" class="field-error">{{ $message }}</small>
             @enderror
         </div>
 
@@ -87,15 +106,17 @@
                 value="{{ old('quantity') }}"
                 placeholder="Contoh: 5"
                 required
+                @error('quantity') aria-invalid="true" aria-describedby="adjustment-quantity-error" @enderror
             >
             @error('quantity')
-                <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small>
+                <small id="adjustment-quantity-error" class="field-error">{{ $message }}</small>
             @enderror
         </div>
 
         <div class="form-group">
             <label for="reason">Alasan Penyesuaian</label>
-            <select name="reason" id="reason" required>
+            <select name="reason" id="reason" required
+                @error('reason') aria-invalid="true" aria-describedby="adjustment-reason-error" @enderror>
                 <option value="">-- Pilih Alasan --</option>
                 @foreach([
                     'Stok opname',
@@ -111,7 +132,7 @@
                 @endforeach
             </select>
             @error('reason')
-                <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small>
+                <small id="adjustment-reason-error" class="field-error">{{ $message }}</small>
             @enderror
         </div>
 
@@ -122,14 +143,16 @@
                 id="notes"
                 rows="3"
                 placeholder="Tambahkan keterangan jika diperlukan..."
+                @error('notes') aria-invalid="true" aria-describedby="adjustment-notes-error" @enderror
             >{{ old('notes') }}</textarea>
             @error('notes')
-                <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small>
+                <small id="adjustment-notes-error" class="field-error">{{ $message }}</small>
             @enderror
         </div>
 
-        <div style="margin-top: 20px;">
-            <button type="submit" class="btn btn-primary">
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary"
+                {{ $ingredients->isEmpty() || !$hasIdempotencyKey ? 'disabled' : '' }}>
                 Simpan Penyesuaian
             </button>
 
@@ -144,6 +167,10 @@
 document.addEventListener('DOMContentLoaded', function () {
     const ingredientSelect = document.getElementById('ingredient_id');
     const currentStock = document.getElementById('current-stock');
+
+    if (!ingredientSelect || !currentStock) {
+        return;
+    }
 
     function updateStockInfo() {
         const selected = ingredientSelect.options[ingredientSelect.selectedIndex];

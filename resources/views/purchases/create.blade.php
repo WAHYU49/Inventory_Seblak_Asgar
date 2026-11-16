@@ -40,7 +40,18 @@
 
 <form action="{{ route('purchases.store') }}" method="POST">
     @csrf
-    <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
+    @php
+        $hasIdempotencyKey = isset($idempotencyKey)
+            && is_string($idempotencyKey)
+            && $idempotencyKey !== '';
+    @endphp
+    @if ($hasIdempotencyKey)
+        <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
+    @else
+        <div class="alert alert-danger" role="alert">
+            Token transaksi tidak tersedia. Muat ulang halaman sebelum menyimpan pembelian.
+        </div>
+    @endif
 
     <div class="content-card">
         <h3>Informasi Pembelian</h3>
@@ -48,60 +59,89 @@
         <div class="form-group">
             <label for="purchase_date">Tanggal Pembelian</label>
             <input id="purchase_date" type="date" name="purchase_date"
-                value="{{ old('purchase_date', now('Asia/Jakarta')->toDateString()) }}" required>
-            @error('purchase_date') <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small> @enderror
+                value="{{ old('purchase_date', now('Asia/Jakarta')->toDateString()) }}" required
+                @error('purchase_date') aria-invalid="true" aria-describedby="purchase-date-error" @enderror>
+            @error('purchase_date') <small id="purchase-date-error" class="field-error">{{ $message }}</small> @enderror
         </div>
 
         <div class="form-group">
             <label for="notes">Catatan (Opsional)</label>
             <textarea id="notes" name="notes" rows="3"
-                placeholder="Contoh: Pembelian bahan baku dari supplier">{{ old('notes') }}</textarea>
-            @error('notes') <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small> @enderror
+                placeholder="Contoh: Pembelian bahan baku dari supplier"
+                @error('notes') aria-invalid="true" aria-describedby="notes-error" @enderror>{{ old('notes') }}</textarea>
+            @error('notes') <small id="notes-error" class="field-error">{{ $message }}</small> @enderror
         </div>
     </div>
 
     <div class="content-card">
         <h3>Detail Bahan Baku</h3>
 
+        @if ($ingredients->isEmpty())
+            <div class="alert alert-info" role="status">
+                <strong>Belum ada bahan baku.</strong>
+                <p>Tambahkan bahan baku terlebih dahulu. Pembelian belum dapat disimpan tanpa bahan baku.</p>
+                <a href="{{ route('ingredients.create') }}" class="btn btn-primary">Tambah Bahan Baku</a>
+            </div>
+        @endif
+
         <div id="purchase-container">
+            @php
+                $detailRows = old('details', [[]]);
+                if ($detailRows === []) {
+                    $detailRows = [[]];
+                }
+                $numericIndexes = array_filter(array_keys($detailRows), 'is_int');
+                $purchaseIndex = $numericIndexes === [] ? count($detailRows) : max($numericIndexes) + 1;
+            @endphp
+            @foreach ($detailRows as $index => $detail)
             <div class="purchase-row">
                 <div class="form-group">
-                    <label for="purchase-ingredient-0">Bahan Baku</label>
-                    <select id="purchase-ingredient-0" name="details[0][ingredient_id]" required>
+                    <label for="purchase-ingredient-{{ $index }}">Bahan Baku</label>
+                    <select id="purchase-ingredient-{{ $index }}" name="details[{{ $index }}][ingredient_id]" required
+                        {{ $ingredients->isEmpty() ? 'disabled' : '' }}
+                        @error('details.' . $index . '.ingredient_id') aria-invalid="true" aria-describedby="purchase-ingredient-{{ $index }}-error" @enderror>
                         <option value="">-- Pilih Bahan --</option>
                         @foreach ($ingredients as $ingredient)
                             <option value="{{ $ingredient->id }}"
-                                {{ old('details.0.ingredient_id') == $ingredient->id ? 'selected' : '' }}>
+                                {{ old('details.' . $index . '.ingredient_id') == $ingredient->id ? 'selected' : '' }}>
                                 {{ $ingredient->name }} ({{ $ingredient->unit }})
                             </option>
                         @endforeach
                     </select>
-                    @error('details.0.ingredient_id') <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small> @enderror
+                    @error('details.' . $index . '.ingredient_id') <small id="purchase-ingredient-{{ $index }}-error" class="field-error">{{ $message }}</small> @enderror
                 </div>
 
                 <div class="form-group">
-                    <label for="purchase-quantity-0">Jumlah</label>
-                    <input id="purchase-quantity-0" type="number" name="details[0][quantity]"
-                        value="{{ old('details.0.quantity') }}" min="0.001" step="0.001"
-                        placeholder="Contoh: 5" required>
-                    @error('details.0.quantity') <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small> @enderror
+                    <label for="purchase-quantity-{{ $index }}">Jumlah</label>
+                    <input id="purchase-quantity-{{ $index }}" type="number" name="details[{{ $index }}][quantity]"
+                        value="{{ old('details.' . $index . '.quantity') }}" min="0.001" step="0.001"
+                        placeholder="Contoh: 5" required
+                        @error('details.' . $index . '.quantity') aria-invalid="true" aria-describedby="purchase-quantity-{{ $index }}-error" @enderror>
+                    @error('details.' . $index . '.quantity') <small id="purchase-quantity-{{ $index }}-error" class="field-error">{{ $message }}</small> @enderror
                 </div>
 
                 <button type="button" class="btn btn-danger" onclick="removePurchase(this)">Hapus</button>
             </div>
+            @endforeach
         </div>
 
-        <button type="button" class="btn btn-secondary" onclick="addPurchase()">
+        <button type="button" class="btn btn-secondary" onclick="addPurchase()"
+            {{ $ingredients->isEmpty() ? 'disabled' : '' }}>
             + Tambah Bahan Baku
         </button>
     </div>
 
-    <button type="submit" class="btn btn-primary">Simpan Pembelian</button>
-    <a href="{{ route('purchases.index') }}" class="btn btn-secondary">Batal</a>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary"
+            {{ $ingredients->isEmpty() || !$hasIdempotencyKey ? 'disabled' : '' }}>
+            Simpan Pembelian
+        </button>
+        <a href="{{ route('purchases.index') }}" class="btn btn-secondary">Batal</a>
+    </div>
 </form>
 
 <script>
-    let purchaseIndex = 1;
+    let purchaseIndex = {{ $purchaseIndex ?? 1 }};
 
     function addPurchase() {
         const container = document.getElementById('purchase-container');

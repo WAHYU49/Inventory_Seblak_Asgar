@@ -45,39 +45,39 @@
         <a href="{{ route('purchases.index') }}" class="btn btn-secondary">Reset</a>
     </form>
 
-    <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse;">
+    <div class="table-responsive">
+        <table>
             <thead>
-                <tr style="background:#f4f6f5;">
-                    <th style="padding:12px; text-align:left;">No</th>
-                    <th style="padding:12px; text-align:left;">Nomor Pembelian</th>
-                    <th style="padding:12px; text-align:left;">Tanggal</th>
-                    <th style="padding:12px; text-align:left;">Waktu Input (WIB)</th>
-                    <th style="padding:12px; text-align:left;">Jumlah Bahan / Kuantitas</th>
-                    <th style="padding:12px; text-align:left;">Catatan</th>
+                <tr>
+                    <th class="table-number">No</th>
+                    <th>Nomor Pembelian</th>
+                    <th>Tanggal</th>
+                    <th>Waktu Input (WIB)</th>
+                    <th>Jumlah Bahan / Kuantitas</th>
+                    <th>Catatan</th>
                 </tr>
             </thead>
 
             <tbody>
                 @forelse ($purchases as $index => $purchase)
-                    <tr style="border-bottom:1px solid #eee;">
-                        <td style="padding:12px;">
+                    <tr>
+                        <td class="table-number">
                             {{ $purchases->firstItem() + $index }}
                         </td>
 
-                        <td style="padding:12px;">
+                        <td>
                             {{ $purchase->purchase_number }}
                         </td>
 
-                        <td style="padding:12px;">
+                        <td>
                             {{ $purchase->purchase_date->format('d-m-Y') }}
                         </td>
 
-                        <td style="padding:12px;">
+                        <td>
                             {{ \App\Support\WibDateTimeFormatter::format($purchase->created_at) }}
                         </td>
 
-                        <td style="padding:12px;">
+                        <td>
                             {{ $purchase->details->count() }} bahan
                             @foreach ($purchase->details as $detail)
                                 <div>
@@ -88,13 +88,13 @@
                             @endforeach
                         </td>
 
-                        <td style="padding:12px;">
+                        <td>
                             {{ $purchase->notes ?: '-' }}
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" style="padding:20px; text-align:center;">
+                        <td colspan="6">
                             Belum ada transaksi pembelian.
                         </td>
                     </tr>
@@ -103,9 +103,7 @@
         </table>
     </div>
 
-    <div style="margin-top:20px;">
-        {{ $purchases->links() }}
-    </div>
+    {{ $purchases->links() }}
 
 </div>
 

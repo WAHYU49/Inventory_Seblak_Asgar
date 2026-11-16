@@ -67,10 +67,10 @@
 </div>
 
 <div class="table-responsive">
-<table border="1" cellpadding="10" cellspacing="0" width="100%">
+<table>
     <thead>
         <tr>
-            <th>No.</th>
+            <th class="table-number">No.</th>
             <th>Nama Menu</th>
             <th>Nama Resep</th>
             <th>Komposisi Bahan</th>
@@ -83,7 +83,7 @@
     <tbody>
         @forelse ($recipes as $recipe)
             <tr>
-                <td>
+                <td class="table-number">
                     {{ $loop->iteration + ($recipes->currentPage() - 1) * $recipes->perPage() }}
                 </td>
 
@@ -108,17 +108,16 @@
                 <td>{{ \App\Support\WibDateTimeFormatter::format($recipe->created_at) }}</td>
 
                 <td>
-                    <a href="{{ route('recipes.edit', $recipe->id) }}" class="btn btn-secondary">Edit</a>
-
-                    <form action="{{ route('recipes.destroy', $recipe->id) }}"
-                          method="POST"
-                          style="display: inline;"
-                          onsubmit="return confirm('Yakin ingin menghapus resep ini?')">
-                        @csrf
-                        @method('DELETE')
-
-                        <button type="submit" class="btn btn-danger">Hapus</button>
-                    </form>
+                    <div class="table-actions">
+                        <a href="{{ route('recipes.edit', $recipe->id) }}" class="btn btn-secondary">Edit</a>
+                        <form action="{{ route('recipes.destroy', $recipe->id) }}"
+                              method="POST"
+                              onsubmit="return confirm('Yakin ingin menghapus resep ini?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-danger">Hapus</button>
+                        </form>
+                    </div>
                 </td>
             </tr>
         @empty
@@ -130,8 +129,6 @@
 </table>
 </div>
 
-<div style="margin-top: 20px;">
-    {{ $recipes->links() }}
-</div>
+{{ $recipes->links() }}
 
 @endsection

@@ -23,7 +23,8 @@
 @endif
 
 @if ($report = session('import_report'))
-    <div class="alert {{ $report['failed'] > 0 ? 'alert-warning' : 'alert-success' }}" role="status">
+    <div class="alert {{ $report['failed'] > 0 ? 'alert-warning' : 'alert-success' }}"
+        role="{{ $report['failed'] > 0 ? 'alert' : 'status' }}">
         <strong>Hasil import</strong>
         <ul>
             <li>Data baru: {{ $report['created'] }}</li>
@@ -49,12 +50,16 @@
     <p><strong>Import ini hanya memperbarui informasi master.</strong> Stok, stok minimum, dan riwayat stok tidak diubah.</p>
 </div>
 
+<div class="content-card">
     <form action="{{ route('ingredients.import.preview') }}" method="POST" enctype="multipart/form-data">
         @csrf
         <div class="form-group">
             <label for="file">File Excel (.xlsx atau .xls, maksimal 5 MB)</label>
-            <input id="file" type="file" name="file" accept=".xlsx,.xls" required>
-            @error('file') <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small> @enderror
+            <input id="file" type="file" name="file" accept=".xlsx,.xls" required
+                @error('file') aria-invalid="true" aria-describedby="file-error" @enderror>
+            @error('file')
+                <small id="file-error" class="field-error">{{ $message }}</small>
+            @enderror
         </div>
         <button type="submit" class="btn btn-primary">Validasi dan Preview</button>
     </form>

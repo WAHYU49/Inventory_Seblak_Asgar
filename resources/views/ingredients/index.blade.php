@@ -48,16 +48,16 @@
 </form>
 
 <div class="table-responsive">
-<table border="1" cellpadding="10" cellspacing="0" width="100%">
+<table>
     <thead>
         <tr>
-            <th>No.</th>
+            <th class="table-number">No.</th>
             <th>Kode</th>
             <th>Nama Bahan</th>
             <th>Kategori</th>
             <th>Satuan</th>
-            <th>Stok Saat Ini</th>
-            <th>Stok Minimum</th>
+            <th class="table-number">Stok Saat Ini</th>
+            <th class="table-number">Stok Minimum</th>
             <th>Status Stok</th>
             <th>Status Data</th>
             <th>Waktu Input (WIB)</th>
@@ -68,7 +68,7 @@
     <tbody>
         @forelse ($ingredients as $ingredient)
             <tr>
-                <td>{{ $loop->iteration + ($ingredients->currentPage() - 1) * $ingredients->perPage() }}</td>
+                <td class="table-number">{{ $loop->iteration + ($ingredients->currentPage() - 1) * $ingredients->perPage() }}</td>
 
                 <td>{{ $ingredient->code }}</td>
 
@@ -78,9 +78,9 @@
 
                 <td>{{ $ingredient->unit }}</td>
 
-                <td>{{ \App\Support\InventoryNumberFormatter::format($ingredient->current_stock) }}</td>
+                <td class="table-number">{{ \App\Support\InventoryNumberFormatter::format($ingredient->current_stock) }}</td>
 
-                <td>{{ \App\Support\InventoryNumberFormatter::format($ingredient->minimum_stock) }}</td>
+                <td class="table-number">{{ \App\Support\InventoryNumberFormatter::format($ingredient->minimum_stock) }}</td>
 
                 <td>
                     @if ($ingredient->current_stock <= 0)
@@ -101,21 +101,18 @@
                 <td>{{ \App\Support\WibDateTimeFormatter::format($ingredient->created_at) }}</td>
 
                 <td>
-                    <a href="{{ route('ingredients.edit', $ingredient->id) }}" class="btn btn-secondary">
-                        Edit
-                    </a>
-
-                    @if ($ingredient->is_active)
-                        <form action="{{ route('ingredients.destroy', $ingredient->id) }}"
-                              method="POST"
-                              style="display: inline;"
-                              onsubmit="return confirm('Yakin ingin menonaktifkan bahan baku ini?')">
-                            @csrf
-                            @method('DELETE')
-
-                            <button type="submit" class="btn btn-danger">Nonaktifkan</button>
-                        </form>
-                    @endif
+                    <div class="table-actions">
+                        <a href="{{ route('ingredients.edit', $ingredient->id) }}" class="btn btn-secondary">Edit</a>
+                        @if ($ingredient->is_active)
+                            <form action="{{ route('ingredients.destroy', $ingredient->id) }}"
+                                  method="POST"
+                                  onsubmit="return confirm('Yakin ingin menonaktifkan bahan baku ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger">Nonaktifkan</button>
+                            </form>
+                        @endif
+                    </div>
                 </td>
             </tr>
         @empty
@@ -127,8 +124,6 @@
 </table>
 </div>
 
-<div style="margin-top: 20px;">
-    {{ $ingredients->links() }}
-</div>
+{{ $ingredients->links() }}
 
 @endsection

@@ -59,10 +59,10 @@
 </div>
 
 <div class="table-responsive">
-<table border="1" cellpadding="10" cellspacing="0" width="100%">
+<table>
     <thead>
         <tr>
-            <th>No.</th>
+            <th class="table-number">No.</th>
             <th>Kode Produk</th>
             <th>Nama Produk</th>
             <th>Kategori</th>
@@ -75,7 +75,7 @@
     <tbody>
         @forelse ($products as $product)
             <tr>
-                <td>{{ $loop->iteration + ($products->currentPage() - 1) * $products->perPage() }}</td>
+                <td class="table-number">{{ $loop->iteration + ($products->currentPage() - 1) * $products->perPage() }}</td>
                 <td>{{ $product->code }}</td>
                 <td>{{ $product->name }}</td>
                 <td>{{ $product->category->name ?? '-' }}</td>
@@ -86,16 +86,16 @@
                 </td>
                 <td>{{ \App\Support\WibDateTimeFormatter::format($product->created_at) }}</td>
                 <td>
-                    <a href="{{ route('products.edit', $product->id) }}" class="btn btn-secondary">Edit</a>
-
-                    <form action="{{ route('products.destroy', $product->id) }}"
-                          method="POST"
-                          style="display:inline;"
-                          onsubmit="return confirm('Yakin ingin menghapus produk ini?')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-danger">Hapus</button>
-                    </form>
+                    <div class="table-actions">
+                        <a href="{{ route('products.edit', $product->id) }}" class="btn btn-secondary">Edit</a>
+                        <form action="{{ route('products.destroy', $product->id) }}"
+                              method="POST"
+                              onsubmit="return confirm('Yakin ingin menghapus produk ini?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-danger">Hapus</button>
+                        </form>
+                    </div>
                 </td>
             </tr>
         @empty
@@ -107,8 +107,6 @@
 </table>
 </div>
 
-<div style="margin-top: 20px;">
-    {{ $products->links() }}
-</div>
+{{ $products->links() }}
 
 @endsection

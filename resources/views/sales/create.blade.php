@@ -1,53 +1,12 @@
 @extends('layouts.app')
 
+@section('title', 'Tambah Penjualan - Inventory Seblak Asgar')
+
 @section('content')
 <style>
     .sale-form-container {
         max-width: 1100px;
         margin: 0 auto;
-    }
-
-    .sale-card {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 22px;
-        margin-bottom: 20px;
-    }
-
-    .sale-card h3 {
-        margin: 0 0 18px;
-        color: #1f2937;
-        font-size: 18px;
-    }
-
-    .sale-form-group {
-        margin-bottom: 16px;
-    }
-
-    .sale-form-group label {
-        display: block;
-        margin-bottom: 6px;
-        font-weight: 600;
-        color: #374151;
-    }
-
-    .sale-form-group input,
-    .sale-form-group select,
-    .sale-form-group textarea {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        font-size: 14px;
-        box-sizing: border-box;
-    }
-
-    .sale-form-group input:focus,
-    .sale-form-group select:focus,
-    .sale-form-group textarea:focus {
-        outline: none;
-        border-color: #15803d;
     }
 
     .product-row {
@@ -106,99 +65,22 @@
         color: #166534;
     }
 
-    .sale-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 40px;
-        padding: 9px 14px;
-        border: 1px solid transparent;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 600;
-        line-height: 1.3;
-        text-decoration: none;
-    }
-
-    .sale-button-primary {
-        background: #183b2b;
-        color: white;
-    }
-
-    .sale-button-primary:hover {
-        background: #28513b;
-    }
-
-    .sale-button-secondary {
-        border-color: #d7dfd9;
-        background: #f3f6f4;
-        color: #34483b;
-    }
-
-    .sale-button-secondary:hover {
-        background: #e7ede9;
-    }
-
-    .sale-button-danger {
-        background: #fee2e2;
-        color: #b91c1c;
-        min-height: 36px;
-        padding: 7px 10px;
-    }
-
-    .sale-button:focus-visible {
-        outline: 3px solid #8bb99b;
-        outline-offset: 2px;
-    }
-
-    .sale-actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .sale-alert-warning {
-        background: #fffbeb;
-        color: #92400e;
-        border: 1px solid #fde68a;
-    }
-
-    .sale-empty {
-        padding: 20px;
-        background: #fffbeb;
-        border: 1px solid #fde68a;
-        border-radius: 8px;
-        color: #92400e;
-    }
-
     @media (max-width: 700px) {
         .product-grid {
             grid-template-columns: 1fr;
             gap: 0;
-        }
-
-        .sale-card {
-            padding: 15px;
         }
     }
 </style>
 
 <div class="sale-form-container">
 
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:20px;">
-        <div>
-            <h2 style="margin:0 0 5px; color:#1f2937;">Tambah Penjualan</h2>
-            <p style="margin:0; color:#6b7280; font-size:14px;">
-                Catat transaksi dan kurangi stok bahan baku secara otomatis.
-            </p>
-        </div>
-
-        <a href="{{ route('sales.index') }}"
-           class="sale-button sale-button-secondary">
-            Kembali
-        </a>
+    <div class="page-header">
+        <h1>Tambah Penjualan</h1>
+        <p>Catat transaksi dan kurangi stok bahan baku secara otomatis.</p>
     </div>
+
+    <p><a href="{{ route('sales.index') }}" class="btn btn-secondary">Kembali</a></p>
 
     @if (session('success'))
         <div class="alert alert-success" role="status">
@@ -207,9 +89,9 @@
     @endif
 
     @if ($errors->any())
-        <div class="alert alert-danger" role="alert">
+        <div class="alert alert-danger" role="alert" aria-live="assertive">
             <strong>Periksa kembali isian berikut:</strong>
-            <ul style="margin:8px 0 0; padding-left:20px;">
+            <ul>
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -218,21 +100,36 @@
     @endif
 
     @if ($products->isEmpty())
-        <div class="sale-empty">
+        <div class="alert alert-warning" role="status">
             <strong>Belum ada menu yang bisa dijual.</strong>
-            <p style="margin-bottom:0;">
+            <p>
                 Pastikan produk sudah aktif dan memiliki resep aktif dengan bahan baku yang tersedia.
             </p>
+            <div class="form-actions">
+                <a href="{{ route('products.index') }}" class="btn btn-secondary">Kelola Produk</a>
+                <a href="{{ route('recipes.index') }}" class="btn btn-secondary">Kelola Resep</a>
+            </div>
         </div>
     @else
 
         <form action="{{ route('sales.store') }}" method="POST" id="saleForm">
             @csrf
-            <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
-            <div class="sale-card">
+            @php
+                $hasIdempotencyKey = isset($idempotencyKey)
+                    && is_string($idempotencyKey)
+                    && $idempotencyKey !== '';
+            @endphp
+            @if ($hasIdempotencyKey)
+                <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
+            @else
+                <div class="alert alert-danger" role="alert">
+                    Token transaksi tidak tersedia. Muat ulang halaman sebelum menyimpan penjualan.
+                </div>
+            @endif
+            <div class="content-card">
                 <h3>Informasi Penjualan</h3>
 
-                <div class="sale-form-group">
+                <div class="form-group">
                     <label for="sale_date">Tanggal Penjualan</label>
                     <input
                         type="date"
@@ -240,23 +137,25 @@
                         name="sale_date"
                         value="{{ old('sale_date', now('Asia/Jakarta')->toDateString()) }}"
                         required
+                        @error('sale_date') aria-invalid="true" aria-describedby="sale-date-error" @enderror
                     >
-                    @error('sale_date') <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small> @enderror
+                    @error('sale_date') <small id="sale-date-error" class="field-error">{{ $message }}</small> @enderror
                 </div>
 
-                <div class="sale-form-group">
+                <div class="form-group">
                     <label for="notes">Catatan (Opsional)</label>
                     <textarea
                         id="notes"
                         name="notes"
                         rows="3"
                         placeholder="Masukkan catatan transaksi..."
+                        @error('notes') aria-invalid="true" aria-describedby="sale-notes-error" @enderror
                     >{{ old('notes') }}</textarea>
-                    @error('notes') <small class="text-danger" style="display:block; color:#b91c1c;">{{ $message }}</small> @enderror
+                    @error('notes') <small id="sale-notes-error" class="field-error">{{ $message }}</small> @enderror
                 </div>
             </div>
 
-            <div class="sale-card">
+            <div class="content-card">
                 <h3>Daftar Menu</h3>
 
                 <div id="productContainer"></div>
@@ -264,7 +163,7 @@
                 <button
                     type="button"
                     id="addProduct"
-                    class="sale-button sale-button-secondary"
+                    class="btn btn-secondary"
                 >
                     + Tambah Menu
                 </button>
@@ -273,22 +172,23 @@
             <div class="sale-summary">
                 <h3>Ringkasan Kebutuhan Stok</h3>
 
-                <div id="ingredientSummary" style="margin-top:15px; color:#374151;">
+                <div id="ingredientSummary" aria-live="polite">
                     Belum ada menu dipilih.
                 </div>
             </div>
 
-            <div class="sale-actions">
+            <div class="form-actions">
                 <button
                     type="submit"
-                    class="sale-button sale-button-primary"
+                    class="btn btn-primary"
                     id="submitSale"
+                    {{ $hasIdempotencyKey ? '' : 'disabled' }}
                 >
                     Simpan Penjualan
                 </button>
 
                 <a href="{{ route('sales.index') }}"
-                   class="sale-button sale-button-secondary">
+                   class="btn btn-secondary">
                     Batal
                 </a>
             </div>
@@ -301,6 +201,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Data produk dan resep dari SaleController.
     const products = @json($productData);
+    const oldDetails = @json(old('details', []));
+    const validationErrors = @json($errors->getMessages());
 
     const container = document.getElementById('productContainer');
     const addButton = document.getElementById('addProduct');
@@ -328,6 +230,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         return element;
+    }
+
+    function attachFieldError(field, group, errorKey) {
+        const messages = validationErrors[errorKey];
+
+        if (!messages || messages.length === 0) {
+            return;
+        }
+
+        const error = createElement('small', 'field-error', messages[0]);
+        error.id = field.id + '-error';
+        field.setAttribute('aria-invalid', 'true');
+        field.setAttribute('aria-describedby', error.id);
+        group.appendChild(error);
     }
 
     // Memperbarui pilihan agar satu menu tidak dipilih dua kali.
@@ -489,17 +405,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Membuat satu baris menu.
-    function addProductRow() {
+    function addProductRow(detail = {}, index = rowIndex) {
+        detail = detail || {};
         const row = createElement('div', 'product-row');
 
         const header = createElement('div', 'product-row-header');
         const title = createElement('strong', '', 'Menu Penjualan');
 
-        const removeButton = createElement(
-            'button',
-            'sale-button sale-button-danger',
-            'Hapus'
-        );
+        const removeButton = createElement('button', 'btn btn-danger', 'Hapus');
 
         removeButton.type = 'button';
 
@@ -509,12 +422,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const grid = createElement('div', 'product-grid');
 
         // Pilihan menu.
-        const productGroup = createElement('div', 'sale-form-group');
+        const productGroup = createElement('div', 'form-group');
         const productLabel = createElement('label', '', 'Pilih Menu');
 
         const select = createElement('select', 'product-select');
-        select.id = 'sale-product-' + rowIndex;
-        select.name = 'details[' + rowIndex + '][product_id]';
+        select.id = 'sale-product-' + index;
+        select.name = 'details[' + index + '][product_id]';
         select.required = true;
         productLabel.htmlFor = select.id;
 
@@ -537,12 +450,14 @@ document.addEventListener('DOMContentLoaded', function () {
             option.value = product.id;
             select.appendChild(option);
         });
+        select.value = detail.product_id ? String(detail.product_id) : '';
 
         productGroup.appendChild(productLabel);
         productGroup.appendChild(select);
+        attachFieldError(select, productGroup, 'details.' + index + '.product_id');
 
         // Jumlah menu.
-        const quantityGroup = createElement('div', 'sale-form-group');
+        const quantityGroup = createElement('div', 'form-group');
         const quantityLabel = createElement('label', '', 'Jumlah Porsi');
 
         const quantityInput = createElement(
@@ -550,17 +465,20 @@ document.addEventListener('DOMContentLoaded', function () {
             'product-quantity'
         );
 
-        quantityInput.id = 'sale-quantity-' + rowIndex;
+        quantityInput.id = 'sale-quantity-' + index;
         quantityInput.type = 'number';
-        quantityInput.name = 'details[' + rowIndex + '][quantity]';
+        quantityInput.name = 'details[' + index + '][quantity]';
         quantityInput.min = '1';
         quantityInput.step = '1';
-        quantityInput.value = '1';
+        quantityInput.value = detail.quantity !== undefined && detail.quantity !== null
+            ? detail.quantity
+            : '1';
         quantityInput.required = true;
         quantityLabel.htmlFor = quantityInput.id;
 
         quantityGroup.appendChild(quantityLabel);
         quantityGroup.appendChild(quantityInput);
+        attachFieldError(quantityInput, quantityGroup, 'details.' + index + '.quantity');
 
         grid.appendChild(productGroup);
         grid.appendChild(quantityGroup);
@@ -577,7 +495,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         container.appendChild(row);
 
-        rowIndex++;
+        const numericIndex = Number(index);
+        if (Number.isInteger(numericIndex)) {
+            rowIndex = Math.max(rowIndex, numericIndex + 1);
+        }
 
         select.addEventListener('change', function () {
             const product = products.find(
@@ -603,6 +524,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
+        renderRecipe(row, products.find(item => String(item.id) === select.value));
         updateProductOptions();
     }
 
@@ -655,8 +577,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     );
 
-    // Baris pertama otomatis dibuat ketika halaman dibuka.
-    addProductRow();
+    const previousRows = Object.entries(oldDetails);
+
+    if (previousRows.length === 0) {
+        addProductRow();
+    } else {
+        previousRows.forEach(([index, detail]) => addProductRow(detail, index));
+    }
+
+    updateSummary();
 
 });
 </script>

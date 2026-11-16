@@ -44,10 +44,10 @@
 </div>
 
 <div class="table-responsive">
-<table border="1" cellpadding="10" cellspacing="0" width="100%">
+<table>
     <thead>
         <tr>
-            <th>No.</th>
+            <th class="table-number">No.</th>
             <th>Nama Kategori</th>
             <th>Deskripsi</th>
             <th>Status</th>
@@ -59,7 +59,7 @@
     <tbody>
         @forelse ($categories as $category)
             <tr>
-                <td>{{ $loop->iteration + ($categories->currentPage() - 1) * $categories->perPage() }}</td>
+                <td class="table-number">{{ $loop->iteration + ($categories->currentPage() - 1) * $categories->perPage() }}</td>
                 <td>{{ $category->name }}</td>
                 <td>{{ $category->description ?? '-' }}</td>
                 <td>
@@ -69,16 +69,16 @@
                 </td>
                 <td>{{ \App\Support\WibDateTimeFormatter::format($category->created_at) }}</td>
                 <td>
-                    <a href="{{ route('categories.edit', $category->id) }}" class="btn btn-secondary">Edit</a>
-
-                    <form action="{{ route('categories.destroy', $category->id) }}"
-                          method="POST"
-                          style="display:inline;"
-                          onsubmit="return confirm('Yakin ingin menghapus kategori ini?')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-danger">Hapus</button>
-                    </form>
+                    <div class="table-actions">
+                        <a href="{{ route('categories.edit', $category->id) }}" class="btn btn-secondary">Edit</a>
+                        <form action="{{ route('categories.destroy', $category->id) }}"
+                              method="POST"
+                              onsubmit="return confirm('Yakin ingin menghapus kategori ini?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-danger">Hapus</button>
+                        </form>
+                    </div>
                 </td>
             </tr>
         @empty
@@ -90,8 +90,6 @@
 </table>
 </div>
 
-<div style="margin-top: 20px;">
-    {{ $categories->links() }}
-</div>
+{{ $categories->links() }}
 
 @endsection

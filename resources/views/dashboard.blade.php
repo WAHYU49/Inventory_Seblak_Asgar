@@ -92,33 +92,168 @@
         }
     }
 
-    .stock-chart h2 {
-        margin-top: 0;
-        font-size: 18px;
+    .stock-chart {
+        color: #26352c;
     }
 
-.chart-item {
-    margin-bottom: 20px;
-}
+    .stock-chart-header {
+        margin-bottom: 22px;
+    }
 
-.chart-label {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 14px;
-}
+    .stock-chart-header h2 {
+        margin: 0 0 6px;
+        color: #183b2b;
+        font-size: 19px;
+    }
 
-.chart-track {
-    height: 13px;
-    background: #edf0ee;
-    border-radius: 10px;
-    overflow: hidden;
-}
+    .stock-chart-description {
+        margin: 0;
+        color: #718078;
+        font-size: 14px;
+    }
 
-.chart-fill {
-    height: 100%;
-    border-radius: 10px;
-}
+    .stock-chart-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        align-items: center;
+        gap: 30px;
+    }
+
+    .stock-donut-area {
+        position: relative;
+        width: min(100%, 260px);
+        aspect-ratio: 1;
+        margin-inline: auto;
+    }
+
+    .stock-donut {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+    }
+
+    .stock-donut-track,
+    .stock-donut-segment {
+        fill: none;
+        stroke-width: 16;
+    }
+
+    .stock-donut-track {
+        stroke: #edf1ee;
+    }
+
+    .stock-donut-segment {
+        stroke-linecap: butt;
+    }
+
+    .stock-donut-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        text-align: center;
+    }
+
+    .stock-donut-total {
+        color: #183b2b;
+        font-size: 36px;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .stock-donut-caption {
+        margin-top: 7px;
+        color: #718078;
+        font-size: 13px;
+    }
+
+    .stock-chart-legend {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .stock-chart-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+        padding: 14px 16px;
+        border: 1px solid #e8ede9;
+        border-radius: 9px;
+        background: #fff;
+    }
+
+    .stock-chart-marker {
+        flex: 0 0 11px;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+    }
+
+    .stock-chart-legend-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .stock-chart-legend-label {
+        display: block;
+        margin-bottom: 4px;
+        color: #37463c;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .stock-chart-legend-stats {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 4px 12px;
+        color: #718078;
+        font-size: 13px;
+    }
+
+    .stock-chart-legend-stats strong {
+        color: #26352c;
+    }
+
+    .stock-chart-empty {
+        padding: 28px 20px;
+        border: 1px dashed #d7dfd9;
+        border-radius: 9px;
+        background: #f8faf8;
+        text-align: center;
+    }
+
+    .stock-chart-empty strong {
+        display: block;
+        margin-bottom: 6px;
+        color: #37463c;
+    }
+
+    .stock-chart-empty p {
+        margin: 0 0 14px;
+        color: #718078;
+        font-size: 14px;
+    }
+
+    @media (max-width: 650px) {
+        .stock-chart-layout {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 20px;
+        }
+
+        .stock-donut-area {
+            width: min(100%, 230px);
+        }
+    }
 </style>
 
 <div class="dashboard-cards">
@@ -164,60 +299,92 @@
 
 </div>
 
-<div class="stock-chart">
-    <h2>Grafik Kondisi Stok Bahan Baku</h2>
+@php
+    $stockChartSegments = [
+        ['key' => 'safe', 'label' => 'Aman', 'count' => $safeStockIngredients, 'color' => '#27834c'],
+        ['key' => 'low', 'label' => 'Stok Menipis', 'count' => $lowStockIngredients, 'color' => '#e67e22'],
+        ['key' => 'empty', 'label' => 'Stok Habis', 'count' => $outOfStockIngredients, 'color' => '#c0392b'],
+    ];
+    $totalStockCategories = array_sum(array_column($stockChartSegments, 'count'));
+    $stockChartOffset = 0;
+@endphp
 
-    @php
-        $totalStockCategories = $outOfStockIngredients
-            + $lowStockIngredients
-            + $safeStockIngredients;
+<section class="stock-chart"
+    data-stock-total="{{ $totalIngredients }}"
+    aria-labelledby="stock-chart-title"
+    aria-describedby="stock-chart-description">
+    <header class="stock-chart-header">
+        <h2 id="stock-chart-title">Grafik Kondisi Stok Bahan Baku</h2>
+        <p id="stock-chart-description" class="stock-chart-description">
+            Ringkasan persediaan bahan baku aktif dibandingkan dengan batas minimum stok.
+        </p>
+    </header>
 
-        $outPercentage = $totalStockCategories > 0
-            ? ($outOfStockIngredients / $totalStockCategories) * 100 : 0;
-
-        $lowPercentage = $totalStockCategories > 0
-            ? ($lowStockIngredients / $totalStockCategories) * 100 : 0;
-
-        $safePercentage = $totalStockCategories > 0
-            ? ($safeStockIngredients / $totalStockCategories) * 100 : 0;
-    @endphp
-
-    <div class="chart-item">
-        <div class="chart-label">
-            <span>Stok Habis</span>
-            <strong>{{ $outOfStockIngredients }}</strong>
+    @if ($totalIngredients === 0)
+        <div class="stock-chart-empty" data-stock-empty="true" role="status">
+            <strong>Belum ada bahan baku aktif</strong>
+            <p>Data kondisi stok akan ditampilkan setelah bahan baku aktif tersedia.</p>
+            <a href="{{ route('ingredients.index') }}" class="btn btn-secondary">Lihat Bahan Baku</a>
         </div>
-        <div class="chart-track">
-            <div class="chart-fill"
-                style="width: {{ $outPercentage }}%; background: #c0392b;">
+    @else
+        <div class="stock-chart-layout">
+            <div class="stock-donut-area">
+                <svg class="stock-donut" viewBox="0 0 120 120" role="img"
+                    aria-label="Grafik donat kondisi stok untuk {{ $totalIngredients }} bahan baku aktif">
+                    <circle class="stock-donut-track" cx="60" cy="60" r="44"></circle>
+                    @foreach ($stockChartSegments as $segment)
+                        @php
+                            $percentage = $totalStockCategories > 0
+                                ? ($segment['count'] / $totalStockCategories) * 100
+                                : 0;
+                            $formattedPercentage = rtrim(rtrim(number_format($percentage, 1, '.', ''), '0'), '.');
+                        @endphp
+                        <circle class="stock-donut-segment" cx="60" cy="60" r="44"
+                            pathLength="100"
+                            stroke="{{ $segment['color'] }}"
+                            stroke-dasharray="{{ $percentage }} {{ 100 - $percentage }}"
+                            stroke-dashoffset="{{ -$stockChartOffset }}"
+                            transform="rotate(-90 60 60)">
+                            <title>{{ $segment['label'] }}: {{ $segment['count'] }} bahan ({{ $formattedPercentage }}%)</title>
+                        </circle>
+                        @php
+                            $stockChartOffset += $percentage;
+                        @endphp
+                    @endforeach
+                </svg>
+                <div class="stock-donut-center" aria-hidden="true">
+                    <span class="stock-donut-total">{{ $totalIngredients }}</span>
+                    <span class="stock-donut-caption">bahan aktif</span>
+                </div>
             </div>
-        </div>
-    </div>
 
-    <div class="chart-item">
-        <div class="chart-label">
-            <span>Stok Menipis</span>
-            <strong>{{ $lowStockIngredients }}</strong>
+            <ul class="stock-chart-legend" aria-label="Rincian kondisi stok">
+                @foreach ($stockChartSegments as $segment)
+                    @php
+                        $percentage = $totalStockCategories > 0
+                            ? ($segment['count'] / $totalStockCategories) * 100
+                            : 0;
+                        $formattedPercentage = rtrim(rtrim(number_format($percentage, 1, '.', ''), '0'), '.');
+                    @endphp
+                    <li class="stock-chart-legend-item"
+                        data-stock-category="{{ $segment['key'] }}"
+                        data-stock-count="{{ $segment['count'] }}"
+                        data-stock-percentage="{{ $formattedPercentage }}">
+                        <span class="stock-chart-marker" style="background-color: {{ $segment['color'] }};"
+                            aria-hidden="true"></span>
+                        <span class="stock-chart-legend-content">
+                            <span class="stock-chart-legend-label">{{ $segment['label'] }}</span>
+                            <span class="stock-chart-legend-stats">
+                                <span><strong>{{ $segment['count'] }}</strong> bahan</span>
+                                <strong>{{ $formattedPercentage }}%</strong>
+                            </span>
+                        </span>
+                    </li>
+                @endforeach
+            </ul>
         </div>
-        <div class="chart-track">
-            <div class="chart-fill"
-                style="width: {{ $lowPercentage }}%; background: #e67e22;">
-            </div>
-        </div>
-    </div>
-
-    <div class="chart-item">
-        <div class="chart-label">
-            <span>Stok Aman</span>
-            <strong>{{ $safeStockIngredients }}</strong>
-        </div>
-        <div class="chart-track">
-            <div class="chart-fill"
-                style="width: {{ $safePercentage }}%; background: #27834c;">
-            </div>
-        </div>
-    </div>
-</div>
+    @endif
+</section>
 
 <div class="dashboard-section">
     <h2>10 Bahan Baku dengan Stok Menipis</h2>
@@ -225,39 +392,39 @@
     @if ($lowStockList->count() > 0)
 
         <div class="table-responsive">
-        <table class="dashboard-table">
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th>Kode Bahan</th>
-                    <th>Nama Bahan</th>
-                    <th>Stok Saat Ini</th>
-                    <th>Minimum Stok</th>
-                    <th>Status</th>
-                    <th>Waktu Input (WIB)</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                @foreach ($lowStockList as $index => $ingredient)
+            <table>
+                <thead>
                     <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td>{{ $ingredient->code }}</td>
-                        <td>{{ $ingredient->name }}</td>
-                        <td>
-                            {{ \App\Support\InventoryNumberFormatter::format($ingredient->current_stock) }}
-                            {{ $ingredient->unit }}
-                        </td>
-                        <td>
-                            {{ \App\Support\InventoryNumberFormatter::format($ingredient->minimum_stock) }}
-                            {{ $ingredient->unit }}
-                        </td>
-                        <td class="stock-warning">Stok Menipis</td>
-                        <td>{{ \App\Support\WibDateTimeFormatter::format($ingredient->created_at) }}</td>
+                        <th class="table-number">No</th>
+                        <th>Kode Bahan</th>
+                        <th>Nama Bahan</th>
+                        <th class="table-number">Stok Saat Ini</th>
+                        <th class="table-number">Minimum Stok</th>
+                        <th>Status</th>
+                        <th>Waktu Input (WIB)</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </thead>
+
+                <tbody>
+                    @foreach ($lowStockList as $index => $ingredient)
+                        <tr>
+                            <td class="table-number">{{ $index + 1 }}</td>
+                            <td>{{ $ingredient->code }}</td>
+                            <td>{{ $ingredient->name }}</td>
+                            <td class="table-number">
+                                {{ \App\Support\InventoryNumberFormatter::format($ingredient->current_stock) }}
+                                {{ $ingredient->unit }}
+                            </td>
+                            <td class="table-number">
+                                {{ \App\Support\InventoryNumberFormatter::format($ingredient->minimum_stock) }}
+                                {{ $ingredient->unit }}
+                            </td>
+                            <td class="stock-warning">Stok Menipis</td>
+                            <td>{{ \App\Support\WibDateTimeFormatter::format($ingredient->created_at) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
 
     @else
@@ -278,8 +445,8 @@
     @if ($recentPurchases->isEmpty())
         <p>Belum ada aktivitas pembelian pada periode ini.</p>
     @else
-        <div style="overflow-x:auto;">
-            <table class="dashboard-table">
+        <div class="table-responsive">
+            <table>
                 <thead>
                     <tr>
                         <th>Tanggal Transaksi</th>
@@ -320,8 +487,8 @@
     @if ($recentSales->isEmpty())
         <p>Belum ada aktivitas penjualan pada periode ini.</p>
     @else
-        <div style="overflow-x:auto;">
-            <table class="dashboard-table">
+        <div class="table-responsive">
+            <table>
                 <thead>
                     <tr>
                         <th>Tanggal Transaksi</th>
@@ -361,8 +528,8 @@
     @if ($recentAdjustments->isEmpty())
         <p>Belum ada aktivitas penyesuaian pada periode ini.</p>
     @else
-        <div style="overflow-x:auto;">
-            <table class="dashboard-table">
+        <div class="table-responsive">
+            <table>
                 <thead>
                     <tr>
                         <th>Tanggal Transaksi</th>
