@@ -76,7 +76,7 @@
     <div class="content-card">
         <h3>Detail Bahan Baku</h3>
 
-        @if ($ingredients->isEmpty())
+        @if (!$hasActiveIngredients)
             <div class="alert alert-info" role="status">
                 <strong>Belum ada bahan baku.</strong>
                 <p>Tambahkan bahan baku terlebih dahulu. Pembelian belum dapat disimpan tanpa bahan baku.</p>

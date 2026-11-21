@@ -43,9 +43,23 @@ class PurchaseIngredientSearchTest extends TestCase
             ->assertSee($active->name)
             ->assertDontSee('Bahan Nonaktif Uji')
             ->assertSee('select.value = String(item.id)', false)
-            ->assertSee('document.addEventListener(\'input\'', false);
+            ->assertSee('document.addEventListener(\'input\'', false)
+            ->assertViewHas('hasActiveIngredients', true);
 
         $this->assertSame(0.0, (float) $active->fresh()->current_stock);
+    }
+
+    public function test_purchase_form_renders_when_no_active_ingredients_exist(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $this->createIngredient('Bahan Tidak Aktif', false);
+
+        $this->get(route('purchases.create'))
+            ->assertOk()
+            ->assertSee('Belum ada bahan baku.')
+            ->assertSee('data-autocomplete-active-only="true"', false)
+            ->assertViewHas('hasActiveIngredients', false)
+            ->assertSee('disabled', false);
     }
 
     public function test_purchase_autocomplete_returns_the_selected_active_ingredient_id_case_insensitively(): void

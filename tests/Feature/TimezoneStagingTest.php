@@ -39,7 +39,11 @@ class TimezoneStagingTest extends TestCase
         $this->actingAs(new User(['name' => 'Timezone staging test']));
 
         $errors = new ViewErrorBag;
-        $purchase = view('purchases.create', ['ingredients' => collect(), 'errors' => $errors])->render();
+        $purchase = view('purchases.create', [
+            'ingredients' => collect(),
+            'hasActiveIngredients' => false,
+            'errors' => $errors,
+        ])->render();
         $sale = view('sales.create', [
             'products' => collect([(object) ['id' => 1]]),
             'productData' => [],
