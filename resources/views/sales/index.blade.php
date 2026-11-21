@@ -9,7 +9,10 @@
     <p>Daftar transaksi penjualan menu Seblak Asgar.</p>
 </div>
 
-<p><a href="{{ route('sales.create') }}" class="btn btn-primary">+ Tambah Penjualan</a></p>
+<p>
+    <a href="{{ route('sales.create') }}" class="btn btn-primary">+ Tambah Penjualan</a>
+    <a href="{{ route('sales.import') }}" class="btn btn-secondary">Import Hasil Penjualan</a>
+</p>
 
 @if(session('success'))
     <div class="alert alert-success" role="status">

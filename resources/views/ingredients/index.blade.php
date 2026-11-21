@@ -32,8 +32,37 @@
     <a href="{{ route('ingredients.export') }}" class="btn btn-secondary">Export Excel</a>
 </p>
 
-<form action="{{ route('ingredients.index') }}" method="GET"
+<form id="ingredient-filter-form" action="{{ route('ingredients.index') }}" method="GET"
     style="display:flex; flex-wrap:wrap; gap:10px; align-items:end; margin-bottom:20px;">
+    <div>
+        <label for="ingredient-search">Nama Bahan</label><br>
+        <div class="autocomplete"
+            data-autocomplete
+            data-autocomplete-url="{{ route('ingredients.autocomplete') }}"
+            data-autocomplete-form="ingredient-filter-form"
+            data-autocomplete-meta="category"
+            data-autocomplete-submit="true">
+            <input id="ingredient-search" type="search" name="search" value="{{ $search }}"
+                class="autocomplete-input" data-autocomplete-input
+                autocomplete="off" aria-autocomplete="list" aria-expanded="false"
+                aria-controls="ingredient-search-suggestions"
+                placeholder="Cari nama bahan...">
+            <div id="ingredient-search-suggestions" class="autocomplete-suggestions"
+                role="listbox" aria-label="Saran bahan baku" hidden></div>
+        </div>
+    </div>
+    <div>
+        <label for="ingredient-category">Kategori</label><br>
+        <select id="ingredient-category" name="category">
+            <option value="">Semua Kategori</option>
+            @foreach ($categories as $ingredientCategory)
+                <option value="{{ $ingredientCategory }}"
+                    {{ $category === $ingredientCategory ? 'selected' : '' }}>
+                    {{ $ingredientCategory }}
+                </option>
+            @endforeach
+        </select>
+    </div>
     <div>
         <label for="stock-status">Status Stok</label><br>
         <select id="stock-status" name="stock_status">
@@ -44,7 +73,7 @@
         </select>
     </div>
     <button type="submit" class="btn btn-primary">Filter</button>
-    <a href="{{ route('ingredients.index') }}" class="btn btn-secondary">Reset</a>
+    <a href="{{ route('ingredients.index') }}" class="btn btn-secondary">Reset Filter</a>
 </form>
 
 <div class="table-responsive">
@@ -125,5 +154,7 @@
 </div>
 
 {{ $ingredients->links() }}
+
+@include('components.autocomplete')
 
 @endsection

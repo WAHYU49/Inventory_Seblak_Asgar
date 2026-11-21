@@ -41,6 +41,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('products', ProductController::class);
 
     // Bahan baku
+    Route::get('/ingredients/autocomplete', [IngredientController::class, 'autocomplete'])
+        ->name('ingredients.autocomplete');
     Route::get('/ingredients/import', [IngredientImportController::class, 'index'])
         ->name('ingredients.import');
     Route::post('/ingredients/import/preview', [IngredientImportController::class, 'preview'])
@@ -59,6 +61,15 @@ Route::middleware('auth')->group(function () {
         ->only(['index', 'create', 'store']);
 
     // Penjualan
+    Route::get('/sales/import', [SaleController::class, 'import'])
+        ->name('sales.import');
+    Route::post('/sales/import/preview', [SaleController::class, 'previewImport'])
+        ->name('sales.import.preview');
+    Route::get('/sales/import/preview/{token}', [SaleController::class, 'showImportPreview'])
+        ->where('token', '[A-Za-z0-9]{40}')
+        ->name('sales.import.preview.show');
+    Route::post('/sales/import/commit', [SaleController::class, 'commitImport'])
+        ->name('sales.import.commit');
     Route::resource('sales', SaleController::class)
         ->only(['index', 'create', 'store']);
 

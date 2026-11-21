@@ -9,14 +9,76 @@ use Illuminate\Support\Facades\DB;
 
 class IngredientController extends Controller
 {
+    public function autocomplete(Request $request)
+    {
+        $validated = $request->validate([
+            'q' => ['required', 'string', 'min:2', 'max:100'],
+            'active_only' => ['nullable', 'boolean'],
+            'category' => ['nullable', 'string', 'max:255'],
+            'stock_status' => ['nullable', 'in:empty,low,safe'],
+        ]);
+
+        $term = trim($validated['q']);
+
+        if (mb_strlen($term) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        $query = Ingredient::query()
+            ->whereRaw('LOWER(name) LIKE ?', ['%'.mb_strtolower($term).'%']);
+
+        if ($validated['active_only'] ?? false) {
+            $query->where('is_active', true);
+        }
+
+        if (($validated['category'] ?? '') !== '') {
+            $query->where('category', $validated['category']);
+        }
+
+        match ($validated['stock_status'] ?? null) {
+            'empty' => $query->where('is_active', true)
+                ->where('current_stock', '<=', 0),
+            'low' => $query->where('is_active', true)
+                ->where('current_stock', '>', 0)
+                ->whereColumn('current_stock', '<=', 'minimum_stock'),
+            'safe' => $query->where('is_active', true)
+                ->whereColumn('current_stock', '>', 'minimum_stock'),
+            default => null,
+        };
+
+        $suggestions = $query
+            ->orderBy('name')
+            ->limit(10)
+            ->get(['id', 'name', 'category', 'unit'])
+            ->map(fn (Ingredient $ingredient) => [
+                'id' => $ingredient->id,
+                'name' => $ingredient->name,
+                'category' => $ingredient->category,
+                'unit' => $ingredient->unit,
+            ])
+            ->values();
+
+        return response()->json(['data' => $suggestions]);
+    }
+
     // Menampilkan semua bahan baku
     public function index(Request $request)
     {
         $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'category' => ['nullable', 'string', 'max:255'],
             'stock_status' => ['nullable', 'in:empty,low,safe'],
         ]);
 
         $query = Ingredient::query();
+
+        if (($validated['search'] ?? '') !== '') {
+            $query->where('name', 'like', '%' . $validated['search'] . '%');
+        }
+
+        if (($validated['category'] ?? '') !== '') {
+            $query->where('category', $validated['category']);
+        }
 
         match ($validated['stock_status'] ?? null) {
             'empty' => $query->where('is_active', true)
@@ -30,9 +92,18 @@ class IngredientController extends Controller
         };
 
         $ingredients = $query->latest()->paginate(10)->withQueryString();
+        $categories = Ingredient::query()
+            ->whereNotNull('category')
+            ->where('category', '<>', '')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category');
 
         return view('ingredients.index', [
             'ingredients' => $ingredients,
+            'categories' => $categories,
+            'search' => $validated['search'] ?? '',
+            'category' => $validated['category'] ?? '',
             'stockStatus' => $validated['stock_status'] ?? '',
         ]);
     }

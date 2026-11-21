@@ -41,14 +41,22 @@ class PurchaseController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        $ingredientIds = collect($request->session()->getOldInput('details', []))
+            ->pluck('ingredient_id')
+            ->filter()
+            ->unique()
+            ->values();
+
         $ingredients = Ingredient::where('is_active', true)
+            ->whereIn('id', $ingredientIds)
             ->orderBy('name')
             ->get();
 
         return view('purchases.create', [
             'ingredients' => $ingredients,
+            'hasActiveIngredients' => Ingredient::where('is_active', true)->exists(),
             'idempotencyKey' => (string) Str::uuid(),
         ]);
     }

@@ -94,19 +94,41 @@
                 $purchaseIndex = $numericIndexes === [] ? count($detailRows) : max($numericIndexes) + 1;
             @endphp
             @foreach ($detailRows as $index => $detail)
+            @php
+                $selectedIngredient = $ingredients->firstWhere(
+                    'id',
+                    old('details.' . $index . '.ingredient_id')
+                );
+            @endphp
             <div class="purchase-row">
                 <div class="form-group">
+                    <label for="purchase-ingredient-search-{{ $index }}">Cari Bahan</label>
+                    <div class="autocomplete"
+                        data-autocomplete
+                        data-autocomplete-url="{{ route('ingredients.autocomplete') }}"
+                        data-autocomplete-target="purchase-ingredient-{{ $index }}"
+                        data-autocomplete-meta="unit"
+                        data-autocomplete-active-only="true">
+                        <input id="purchase-ingredient-search-{{ $index }}" type="search"
+                            class="autocomplete-input" data-autocomplete-input
+                            value="{{ $selectedIngredient?->name ?? '' }}"
+                            autocomplete="off" aria-autocomplete="list" aria-expanded="false"
+                            aria-controls="purchase-ingredient-suggestions-{{ $index }}"
+                            placeholder="Ketik nama bahan...">
+                        <div id="purchase-ingredient-suggestions-{{ $index }}"
+                            class="autocomplete-suggestions" role="listbox"
+                            aria-label="Saran bahan baku" hidden></div>
+                    </div>
                     <label for="purchase-ingredient-{{ $index }}">Bahan Baku</label>
                     <select id="purchase-ingredient-{{ $index }}" name="details[{{ $index }}][ingredient_id]" required
-                        {{ $ingredients->isEmpty() ? 'disabled' : '' }}
+                        {{ !$hasActiveIngredients ? 'disabled' : '' }}
                         @error('details.' . $index . '.ingredient_id') aria-invalid="true" aria-describedby="purchase-ingredient-{{ $index }}-error" @enderror>
                         <option value="">-- Pilih Bahan --</option>
-                        @foreach ($ingredients as $ingredient)
-                            <option value="{{ $ingredient->id }}"
-                                {{ old('details.' . $index . '.ingredient_id') == $ingredient->id ? 'selected' : '' }}>
-                                {{ $ingredient->name }} ({{ $ingredient->unit }})
+                        @if ($selectedIngredient)
+                            <option value="{{ $selectedIngredient->id }}" selected>
+                                {{ $selectedIngredient->name }} ({{ $selectedIngredient->unit }})
                             </option>
-                        @endforeach
+                        @endif
                     </select>
                     @error('details.' . $index . '.ingredient_id') <small id="purchase-ingredient-{{ $index }}-error" class="field-error">{{ $message }}</small> @enderror
                 </div>
@@ -126,14 +148,14 @@
         </div>
 
         <button type="button" class="btn btn-secondary" onclick="addPurchase()"
-            {{ $ingredients->isEmpty() ? 'disabled' : '' }}>
+            {{ !$hasActiveIngredients ? 'disabled' : '' }}>
             + Tambah Bahan Baku
         </button>
     </div>
 
     <div class="form-actions">
         <button type="submit" class="btn btn-primary"
-            {{ $ingredients->isEmpty() || !$hasIdempotencyKey ? 'disabled' : '' }}>
+            {{ !$hasActiveIngredients || !$hasIdempotencyKey ? 'disabled' : '' }}>
             Simpan Pembelian
         </button>
         <a href="{{ route('purchases.index') }}" class="btn btn-secondary">Batal</a>
@@ -150,14 +172,25 @@
 
         row.innerHTML = `
             <div class="form-group">
+                <label for="purchase-ingredient-search-${purchaseIndex}">Cari Bahan</label>
+                <div class="autocomplete"
+                    data-autocomplete
+                    data-autocomplete-url="{{ route('ingredients.autocomplete') }}"
+                    data-autocomplete-target="purchase-ingredient-${purchaseIndex}"
+                    data-autocomplete-meta="unit"
+                    data-autocomplete-active-only="true">
+                    <input id="purchase-ingredient-search-${purchaseIndex}" type="search"
+                        class="autocomplete-input" data-autocomplete-input
+                        autocomplete="off" aria-autocomplete="list" aria-expanded="false"
+                        aria-controls="purchase-ingredient-suggestions-${purchaseIndex}"
+                        placeholder="Ketik nama bahan...">
+                    <div id="purchase-ingredient-suggestions-${purchaseIndex}"
+                        class="autocomplete-suggestions" role="listbox"
+                        aria-label="Saran bahan baku" hidden></div>
+                </div>
                 <label for="purchase-ingredient-${purchaseIndex}">Bahan Baku</label>
                 <select id="purchase-ingredient-${purchaseIndex}" name="details[${purchaseIndex}][ingredient_id]" required>
                     <option value="">-- Pilih Bahan --</option>
-                    @foreach ($ingredients as $ingredient)
-                        <option value="{{ $ingredient->id }}">
-                            {{ $ingredient->name }} ({{ $ingredient->unit }})
-                        </option>
-                    @endforeach
                 </select>
             </div>
             <div class="form-group">
@@ -182,5 +215,7 @@
             alert('Minimal harus ada satu bahan baku.');
         }
     }
+
 </script>
+@include('components.autocomplete')
 @endsection
