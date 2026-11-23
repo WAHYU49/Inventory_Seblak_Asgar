@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -100,9 +101,46 @@ class ProductController extends Controller
             ->with('success', 'Produk berhasil diperbarui.');
     }
 
+    public function updateStatus(Product $product)
+    {
+        $product->update([
+            'is_active' => ! $product->is_active,
+        ]);
+
+        return redirect()
+            ->route('products.index')
+            ->with(
+                'success',
+                $product->is_active
+                    ? 'Produk berhasil diaktifkan.'
+                    : 'Produk berhasil dinonaktifkan.'
+            );
+    }
+
     public function destroy(Product $product)
     {
-        $product->delete();
+        $deleted = DB::transaction(function () use ($product) {
+            $product = Product::whereKey($product->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($product->recipe()->exists() || $product->saleDetails()->exists()) {
+                return false;
+            }
+
+            $product->delete();
+
+            return true;
+        });
+
+        if (! $deleted) {
+            return redirect()
+                ->route('products.index')
+                ->with(
+                    'error',
+                    'Produk tidak dapat dihapus karena sudah digunakan dalam resep atau riwayat transaksi. Silakan nonaktifkan produk.'
+                );
+        }
 
         return redirect()
             ->route('products.index')

@@ -118,13 +118,15 @@ class SaleController extends Controller
             ]);
         }
 
-        $headers = array_values($rows->first()->all());
+        $headers = array_map(
+            fn ($header) => $this->normalizeProductName((string) $header),
+            array_values($rows->first()->all())
+        );
 
         if (
-            mb_strtolower(trim((string) ($headers[0] ?? ''))) !== 'produk'
-            || mb_strtolower(trim((string) ($headers[1] ?? ''))) !== 'terjual'
-            || collect(array_slice($headers, 2))
-                ->contains(fn ($value) => trim((string) $value) !== '')
+            count($headers) !== 2
+            || $headers[0] !== 'produk'
+            || $headers[1] !== 'terjual'
         ) {
             return back()->withErrors([
                 'file' => 'Header Excel harus berisi dua kolom: Produk dan Terjual.',
@@ -141,23 +143,27 @@ class SaleController extends Controller
 
         $productsByName = Product::query()
             ->get(['id', 'name', 'is_active'])
-            ->groupBy(fn (Product $product) => mb_strtolower(trim($product->name)));
+            ->groupBy(fn (Product $product) => $this->normalizeProductName($product->name));
         $groupedRows = [];
+        $previewRows = [];
         $rowErrors = [];
-        $skipped = 0;
+        $emptyRowsSkipped = 0;
 
         foreach ($dataRows as $index => $row) {
             $rowNumber = $index + 2;
             $values = array_values($row->all());
 
             if ($this->isEmptyImportRow($values)) {
-                $skipped++;
+                $emptyRowsSkipped++;
                 continue;
             }
 
             $errors = [];
             $productName = trim((string) ($values[0] ?? ''));
+            $normalizedProductName = $this->normalizeProductName($productName);
             $rawQuantity = $values[1] ?? null;
+            $quantity = null;
+            $quantityValid = true;
 
             if (collect(array_slice($values, 2))
                 ->contains(fn ($value) => trim((string) $value) !== '')
@@ -169,106 +175,149 @@ class SaleController extends Controller
                 $errors[] = 'Produk wajib diisi.';
             }
 
-            $quantity = null;
-
-            if (
-                ! is_numeric($rawQuantity)
-                || ! is_finite((float) $rawQuantity)
-                || (float) $rawQuantity <= 0
-            ) {
-                $errors[] = 'Terjual harus berupa angka positif.';
+            if ($rawQuantity === null || (is_string($rawQuantity) && trim($rawQuantity) === '')) {
+                $errors[] = 'Terjual wajib diisi dengan angka.';
+                $quantityValid = false;
+            } elseif (! is_numeric($rawQuantity) || ! is_finite((float) $rawQuantity)) {
+                $errors[] = 'Terjual harus berupa angka.';
+                $quantityValid = false;
             } else {
                 $quantity = (float) $rawQuantity;
 
-                if (
+                if ($quantity < 0) {
+                    $errors[] = 'Terjual tidak boleh negatif.';
+                    $quantityValid = false;
+                } elseif (
                     $quantity > self::MAX_IMPORT_QUANTITY
                     || abs($quantity - round($quantity, 3)) > 0.00000001
                 ) {
                     $errors[] = 'Terjual melebihi batas jumlah yang didukung.';
-                } else {
+                    $quantityValid = false;
+                    $quantity = null;
+                } elseif ($quantity > 0) {
                     $quantity = round($quantity, 3);
                 }
             }
 
             $product = null;
+            $matchStatus = $productName === '' ? 'Nama kosong' : 'Tidak ditemukan';
 
             if ($productName !== '') {
-                $matches = $productsByName->get(mb_strtolower($productName), collect());
+                $matches = $productsByName->get($normalizedProductName, collect());
 
                 if ($matches->isEmpty()) {
-                    $errors[] = 'Produk tidak ditemukan.';
+                    $errors[] = 'Produk tidak ditemukan di master produk. Periksa nama pada master produk.';
                 } elseif ($matches->count() > 1) {
                     $errors[] = 'Nama produk cocok dengan lebih dari satu produk terdaftar.';
+                    $matchStatus = 'Nama master ambigu';
                 } else {
                     $product = $matches->first();
 
                     if (! $product->is_active) {
                         $errors[] = 'Produk tidak aktif dan tidak dapat dijual.';
+                        $matchStatus = 'Produk nonaktif';
+                    } else {
+                        $matchStatus = $product->name;
                     }
                 }
             }
 
-            if ($errors !== []) {
-                $rowErrors[] = [
-                    'row' => $rowNumber,
-                    'message' => implode(' ', $errors),
-                ];
-
-                continue;
-            }
-
-            $productId = $product->id;
-
-            if (! isset($groupedRows[$productId])) {
-                $groupedRows[$productId] = [
-                    'product_id' => $productId,
-                    'product_name' => $product->name,
-                    'source_rows' => [],
-                    'total_quantity' => 0,
-                ];
-            }
-
-            $groupedRows[$productId]['source_rows'][] = [
+            $previewIndex = count($previewRows);
+            $previewRows[] = [
                 'row' => $rowNumber,
+                'product_excel' => $productName,
+                'product_matched' => $product ? $product->name : '—',
+                'match_status' => $matchStatus,
                 'quantity' => $quantity,
+                'quantity_valid' => $quantityValid,
+                'errors' => $errors,
+                'zero_skipped' => $quantity === 0.0,
             ];
-            $groupedRows[$productId]['total_quantity'] = round(
-                $groupedRows[$productId]['total_quantity'] + $quantity,
-                3
-            );
-        }
 
-        $previewRows = [];
+            if ($errors === [] && $product && $quantity > 0) {
+                $productId = $product->id;
+
+                if (! isset($groupedRows[$productId])) {
+                    $groupedRows[$productId] = [
+                        'product_id' => $productId,
+                        'product_name' => $product->name,
+                        'source_rows' => [],
+                        'total_quantity' => 0,
+                    ];
+                }
+
+                $groupedRows[$productId]['source_rows'][] = [
+                    'row' => $rowNumber,
+                    'quantity' => $quantity,
+                    'preview_index' => $previewIndex,
+                ];
+                $groupedRows[$productId]['total_quantity'] = round(
+                    $groupedRows[$productId]['total_quantity'] + $quantity,
+                    3
+                );
+            }
+        }
 
         foreach ($groupedRows as $group) {
             if ($group['total_quantity'] > self::MAX_IMPORT_QUANTITY) {
                 foreach ($group['source_rows'] as $sourceRow) {
-                    $rowErrors[] = [
-                        'row' => $sourceRow['row'],
-                        'message' => 'Total Terjual untuk produk ini melebihi batas jumlah yang didukung.',
-                    ];
+                    $previewRows[$sourceRow['preview_index']]['errors'][] =
+                        'Total Terjual untuk produk ini melebihi batas jumlah yang didukung.';
                 }
 
-                continue;
+                unset($groupedRows[$group['product_id']]);
             }
-
-            $previewRows[] = $group;
         }
 
-        if ($previewRows === [] && $rowErrors === []) {
+        if ($previewRows === []) {
             return back()->withErrors([
                 'file' => 'File tidak memiliki baris data penjualan.',
             ]);
         }
 
+        foreach ($previewRows as $row) {
+            if ($row['errors'] !== []) {
+                $rowErrors[] = [
+                    'row' => $row['row'],
+                    'message' => implode(' ', $row['errors']),
+                ];
+            }
+        }
+
+        $validRows = array_filter(
+            $previewRows,
+            fn (array $row) => $row['errors'] === []
+        );
         $token = Str::random(40);
         $request->session()->put('sales_imports.'.$token, [
             'user_id' => $request->user()->id,
             'sale_date' => $validated['sale_date'],
             'idempotency_key' => (string) Str::uuid(),
-            'rows' => $previewRows,
+            'rows' => array_values($groupedRows),
+            'preview_rows' => $previewRows,
             'errors' => $rowErrors,
-            'skipped' => $skipped,
+            'empty_rows_skipped' => $emptyRowsSkipped,
+            'summary' => [
+                'total_rows' => count($previewRows),
+                'valid_rows' => count($validRows),
+                'zero_skipped' => count(array_filter(
+                    $previewRows,
+                    fn (array $row) => $row['zero_skipped']
+                )),
+                'not_found' => count(array_filter(
+                    $previewRows,
+                    fn (array $row) => $row['match_status'] === 'Tidak ditemukan'
+                )),
+                'invalid_quantities' => count(array_filter(
+                    $previewRows,
+                    fn (array $row) => ! $row['quantity_valid']
+                )),
+                'total_units' => array_reduce(
+                    $validRows,
+                    fn (float $total, array $row) => $total + ($row['quantity'] ?? 0),
+                    0.0
+                ),
+            ],
             'completed' => false,
         ]);
 
@@ -288,9 +337,11 @@ class SaleController extends Controller
         return view('sales.import-preview', [
             'token' => $token,
             'rows' => $preview['rows'],
+            'previewRows' => $preview['preview_rows'],
             'rowErrors' => $preview['errors'],
             'saleDate' => $preview['sale_date'],
-            'skipped' => $preview['skipped'],
+            'emptyRowsSkipped' => $preview['empty_rows_skipped'],
+            'summary' => $preview['summary'],
             'completed' => $preview['completed'],
         ]);
     }
@@ -530,5 +581,12 @@ class SaleController extends Controller
         }
 
         return true;
+    }
+
+    private function normalizeProductName(string $value): string
+    {
+        $collapsed = preg_replace('/\s+/u', ' ', trim($value));
+
+        return mb_strtolower($collapsed ?? trim($value));
     }
 }

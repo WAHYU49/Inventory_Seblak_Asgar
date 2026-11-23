@@ -20,7 +20,15 @@
 
 <div class="content-card">
     <p><strong>Tanggal Penjualan:</strong> {{ \Illuminate\Support\Carbon::parse($saleDate)->format('d-m-Y') }}</p>
-    <p><strong>Baris kosong dilewati:</strong> {{ $skipped }}</p>
+    <ul>
+        <li>Total baris Excel: {{ $summary['total_rows'] }}</li>
+        <li>Baris valid: {{ $summary['valid_rows'] }}</li>
+        <li>Baris Terjual = 0 dilewati: {{ $summary['zero_skipped'] }}</li>
+        <li>Produk tidak ditemukan: {{ $summary['not_found'] }}</li>
+        <li>Jumlah tidak valid: {{ $summary['invalid_quantities'] }}</li>
+        <li>Total unit penjualan valid: {{ \App\Support\InventoryNumberFormatter::format($summary['total_units']) }}</li>
+        <li>Baris kosong dilewati: {{ $emptyRowsSkipped }}</li>
+    </ul>
     <p>Preview belum mengubah stok. Stok hanya diproses setelah konfirmasi.</p>
 </div>
 
@@ -37,14 +45,52 @@
 @endif
 
 <div class="content-card">
-    <h2>Hasil penggabungan</h2>
+    <h2>Detail baris Excel</h2>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th class="table-number">Baris</th>
+                    <th>Nama Produk dari Excel</th>
+                    <th>Nama Produk di Database</th>
+                    <th>Terjual</th>
+                    <th>Status Pencocokan</th>
+                    <th>Status Validasi</th>
+                    <th>Keterangan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($previewRows as $row)
+                    <tr>
+                        <td class="table-number">{{ $row['row'] }}</td>
+                        <td>{{ $row['product_excel'] !== '' ? $row['product_excel'] : '—' }}</td>
+                        <td>{{ $row['product_matched'] }}</td>
+                        <td>
+                            {{ $row['quantity'] === null
+                                ? '—'
+                                : \App\Support\InventoryNumberFormatter::format($row['quantity']) }}
+                        </td>
+                        <td>{{ $row['match_status'] }}</td>
+                        <td>{{ $row['errors'] !== [] ? 'Bermasalah' : ($row['zero_skipped'] ? 'Dilewati (0)' : 'Valid') }}</td>
+                        <td>{{ $row['errors'] !== [] ? implode(' ', $row['errors']) : '—' }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="7">Tidak ada baris untuk ditampilkan.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="content-card">
+    <h2>Hasil penggabungan produk yang sama</h2>
     <div class="table-responsive">
         <table>
             <thead>
                 <tr>
                     <th>Produk</th>
                     <th>Baris sumber</th>
-                    <th>Jumlah awal</th>
+                    <th>Jumlah per baris</th>
                     <th>Total hasil penggabungan</th>
                 </tr>
             </thead>
@@ -68,7 +114,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4">Tidak ada baris valid untuk ditampilkan.</td>
+                        <td colspan="4">Tidak ada penjualan positif yang valid untuk diproses.</td>
                     </tr>
                 @endforelse
             </tbody>

@@ -60,9 +60,10 @@ class SalesResultImportTest extends TestCase
             [$product->name, -1],
         ])
             ->assertOk()
-            ->assertSee('Baris 2: Produk tidak ditemukan.')
-            ->assertSee('Baris 3: Terjual harus berupa angka positif.')
-            ->assertSee('Baris 4: Terjual harus berupa angka positif.')
+            ->assertSee('Baris 2: Produk tidak ditemukan di master produk.')
+            ->assertSee('Baris 4: Terjual tidak boleh negatif.')
+            ->assertSee('Baris Terjual = 0 dilewati: 1')
+            ->assertSee('Dilewati (0)')
             ->assertSee('Import tidak dapat dikonfirmasi')
             ->assertDontSee('name="token"', false);
 
@@ -149,6 +150,100 @@ class SalesResultImportTest extends TestCase
             ->assertDontSee('name="token"', false);
     }
 
+    public function test_zero_quantity_is_skipped_while_valid_positive_quantity_is_imported_once(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$product, $ingredient] = $this->createProductWithIngredient('Menu Nol', 2, 10);
+
+        $preview = $this->preview([
+            $this->headers(),
+            [$product->name, 0],
+            [$product->name, 2],
+        ]);
+
+        $preview->assertOk()
+            ->assertSee('Baris Terjual = 0 dilewati: 1')
+            ->assertSee('Total unit penjualan valid: 2')
+            ->assertSee('Dilewati (0)');
+
+        $token = $this->tokenFrom($preview);
+        $this->assertSame(10.0, (float) $ingredient->fresh()->current_stock);
+        $this->post(route('sales.import.commit'), ['token' => $token])
+            ->assertRedirect(route('sales.index'));
+
+        $detail = SaleDetail::where('product_id', $product->id)->firstOrFail();
+        $this->assertSame(2.0, (float) $detail->quantity);
+        $this->assertSame(6.0, (float) $ingredient->fresh()->current_stock);
+        $this->assertSame(1, Sale::where('notes', 'Import hasil penjualan Excel.')->count());
+    }
+
+    public function test_missing_negative_and_text_quantities_are_reported_and_block_import(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$product, $ingredient] = $this->createProductWithIngredient('Menu Validasi', 1, 10);
+
+        $this->preview([
+            $this->headers(),
+            [$product->name, null],
+            [$product->name, -2],
+            [$product->name, 'dua'],
+        ])
+            ->assertOk()
+            ->assertSee('Terjual wajib diisi dengan angka.')
+            ->assertSee('Terjual tidak boleh negatif.')
+            ->assertSee('Terjual harus berupa angka.')
+            ->assertSee('Jumlah tidak valid: 3')
+            ->assertDontSee('name="token"', false);
+
+        $this->assertSame(10.0, (float) $ingredient->fresh()->current_stock);
+        $this->assertDatabaseCount('sales', 0);
+    }
+
+    public function test_import_name_match_is_exact_normalized_and_never_uses_ingredient_names(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$product] = $this->createProductWithIngredient('  Bakso   Aci  ', 1, 10);
+        Ingredient::create([
+            'code' => 'BB-NOT-A-PRODUCT',
+            'name' => 'Grilled Chicken',
+            'unit' => 'gram',
+            'current_stock' => 10,
+            'minimum_stock' => 1,
+        ]);
+        $this->createProductWithIngredient('Saikoro Beef Special', 1, 10);
+
+        $this->preview([
+            $this->headers(),
+            [' bakso ACI ', 1],
+            ['Grilled Chicken', 1],
+            ['Saikoro Beef', 1],
+        ])
+            ->assertOk()
+            ->assertSee('Baris 2')
+            ->assertSee('  Bakso   Aci  ')
+            ->assertSee('Grilled Chicken')
+            ->assertSee('Saikoro Beef')
+            ->assertSee('Produk tidak ditemukan di master produk.')
+            ->assertSee('Produk tidak ditemukan: 2')
+            ->assertDontSee('name="token"', false);
+    }
+
+    public function test_volume_header_is_rejected_instead_of_being_treated_as_sold_quantity(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->post(route('sales.import.preview'), [
+                'sale_date' => '2026-11-21',
+                'file' => $this->makeWorkbook([
+                    ['Produk', 'Volume'],
+                    ['Bakso Aci', 1],
+                ]),
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors('file');
+
+        $this->assertDatabaseCount('sales', 0);
+    }
+
     public function test_manual_sale_still_uses_the_existing_stock_transaction_path(): void
     {
         $this->actingAs(User::factory()->create());
@@ -200,7 +295,7 @@ class SalesResultImportTest extends TestCase
     private function makeWorkbook(array $rows): UploadedFile
     {
         $spreadsheet = new Spreadsheet();
-        $spreadsheet->getActiveSheet()->fromArray($rows, null, 'A1');
+        $spreadsheet->getActiveSheet()->fromArray($rows, '__EMPTY_CELL__', 'A1');
         $path = tempnam(sys_get_temp_dir(), 'sales-result-');
 
         try {

@@ -7,6 +7,7 @@ use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\IngredientExportController;
 use App\Http\Controllers\IngredientImportController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductImportController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\SaleController;
@@ -38,6 +39,18 @@ Route::middleware('auth')->group(function () {
     Route::resource('categories', CategoryController::class);
 
     // Produk menu
+    Route::patch('/products/{product}/status', [ProductController::class, 'updateStatus'])
+        ->name('products.status');
+    Route::get('/products/import', [ProductImportController::class, 'index'])
+        ->name('products.import');
+    Route::get('/products/import/template', [ProductImportController::class, 'template'])
+        ->name('products.import.template');
+    Route::post('/products/import/preview', [ProductImportController::class, 'preview'])
+        ->name('products.import.preview');
+    Route::post('/products/import/mapping', [ProductImportController::class, 'applyMappings'])
+        ->name('products.import.mapping');
+    Route::post('/products/import/commit', [ProductImportController::class, 'commit'])
+        ->name('products.import.commit');
     Route::resource('products', ProductController::class);
 
     // Bahan baku

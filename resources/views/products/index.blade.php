@@ -20,6 +20,7 @@
 
 <p>
     <a href="{{ route('products.create') }}" class="btn btn-primary">+ Tambah Produk</a>
+    <a href="{{ route('products.import') }}" class="btn btn-secondary">Import Produk</a>
 </p>
 
 <div class="content-card">
@@ -88,6 +89,13 @@
                 <td>
                     <div class="table-actions">
                         <a href="{{ route('products.edit', $product->id) }}" class="btn btn-secondary">Edit</a>
+                        <form action="{{ route('products.status', $product->id) }}" method="POST">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="btn btn-secondary">
+                                {{ $product->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                            </button>
+                        </form>
                         <form action="{{ route('products.destroy', $product->id) }}"
                               method="POST"
                               onsubmit="return confirm('Yakin ingin menghapus produk ini?')">
