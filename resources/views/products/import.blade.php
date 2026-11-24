@@ -20,7 +20,8 @@
 
 @if ($report = session('import_report'))
     <div class="alert alert-success" role="status">
-        Import berhasil. {{ $report['created'] }} produk ditambahkan.
+        Import selesai. {{ $report['created'] }} produk ditambahkan;
+        {{ $report['duplicates'] }} produk duplikat dilewati.
     </div>
 @endif
 
@@ -34,7 +35,7 @@
 
 <div class="content-card">
     <p>File harus memiliki dua kolom: <strong>Produk</strong> dan <strong>Kategori</strong>.</p>
-    <p>Kategori harus sudah tersedia. Data produk dan bahan baku tetap dikelola terpisah.</p>
+    <p>Kategori dari Excel akan digunakan jika sudah tersedia atau dibuat saat konfirmasi. Data produk dan bahan baku tetap dikelola terpisah.</p>
     <a href="{{ route('products.import.template') }}" class="btn btn-secondary">Unduh Template Excel</a>
 </div>
 

@@ -177,6 +177,52 @@ class SalesResultImportTest extends TestCase
         $this->assertSame(1, Sale::where('notes', 'Import hasil penjualan Excel.')->count());
     }
 
+    public function test_zero_quantity_unknown_products_are_skipped_and_summary_is_calculated_from_rows(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$product, $ingredient] = $this->createProductWithIngredient('Menu Positif', 0.001, 10);
+        $rows = [$this->headers()];
+
+        foreach (range(1, 23) as $index) {
+            $rows[] = [$product->name, 0];
+        }
+
+        foreach (['Grilled Chicken', 'Saikoro Beef', 'Boiled Egg'] as $name) {
+            $rows[] = [$name, 0];
+        }
+
+        foreach (range(1, 93) as $index) {
+            $rows[] = [$product->name, 16];
+        }
+        $rows[] = [$product->name, 87];
+
+        $preview = $this->preview($rows);
+
+        $preview->assertOk()
+            ->assertSee('Total baris Excel: 120')
+            ->assertSee('Baris valid: 94')
+            ->assertSee('Baris Terjual = 0 dilewati: 26')
+            ->assertSee('Produk tidak ditemukan: 0')
+            ->assertSee('Jumlah tidak valid: 0')
+            ->assertSee('Total unit penjualan valid: 1.575')
+            ->assertSee('Dilewati (0)')
+            ->assertDontSee('Produk tidak ditemukan di master produk.')
+            ->assertSee('Konfirmasi Import');
+
+        $this->assertSame(10.0, (float) $ingredient->fresh()->current_stock);
+        $this->assertSame(0, Sale::where('notes', 'Import hasil penjualan Excel.')->count());
+        $this->assertSame(0, StockMovement::where('ingredient_id', $ingredient->id)->count());
+
+        $this->post(route('sales.import.commit'), [
+            'token' => $this->tokenFrom($preview),
+        ])->assertRedirect(route('sales.index'));
+
+        $detail = SaleDetail::where('product_id', $product->id)->firstOrFail();
+        $this->assertSame(1575.0, (float) $detail->quantity);
+        $this->assertSame(8.425, (float) $ingredient->fresh()->current_stock);
+        $this->assertSame(1, StockMovement::where('ingredient_id', $ingredient->id)->count());
+    }
+
     public function test_missing_negative_and_text_quantities_are_reported_and_block_import(): void
     {
         $this->actingAs(User::factory()->create());

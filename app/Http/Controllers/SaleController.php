@@ -171,10 +171,6 @@ class SaleController extends Controller
                 $errors[] = 'Baris hanya boleh berisi kolom Produk dan Terjual.';
             }
 
-            if ($productName === '') {
-                $errors[] = 'Produk wajib diisi.';
-            }
-
             if ($rawQuantity === null || (is_string($rawQuantity) && trim($rawQuantity) === '')) {
                 $errors[] = 'Terjual wajib diisi dengan angka.';
                 $quantityValid = false;
@@ -200,9 +196,14 @@ class SaleController extends Controller
             }
 
             $product = null;
-            $matchStatus = $productName === '' ? 'Nama kosong' : 'Tidak ditemukan';
+            $zeroSkipped = $quantityValid && $quantity === 0.0;
+            $matchStatus = $zeroSkipped ? 'Dilewati (0)' : 'Tidak dicocokkan';
 
-            if ($productName !== '') {
+            if (! $zeroSkipped && $productName === '') {
+                $errors[] = 'Produk wajib diisi.';
+                $matchStatus = 'Nama kosong';
+            } elseif (! $zeroSkipped && $quantityValid) {
+                $matchStatus = 'Tidak ditemukan';
                 $matches = $productsByName->get($normalizedProductName, collect());
 
                 if ($matches->isEmpty()) {
@@ -220,6 +221,8 @@ class SaleController extends Controller
                         $matchStatus = $product->name;
                     }
                 }
+            } elseif (! $zeroSkipped) {
+                $matchStatus = 'Jumlah tidak valid';
             }
 
             $previewIndex = count($previewRows);
@@ -231,7 +234,7 @@ class SaleController extends Controller
                 'quantity' => $quantity,
                 'quantity_valid' => $quantityValid,
                 'errors' => $errors,
-                'zero_skipped' => $quantity === 0.0,
+                'zero_skipped' => $zeroSkipped,
             ];
 
             if ($errors === [] && $product && $quantity > 0) {
@@ -286,7 +289,7 @@ class SaleController extends Controller
 
         $validRows = array_filter(
             $previewRows,
-            fn (array $row) => $row['errors'] === []
+            fn (array $row) => $row['errors'] === [] && ! $row['zero_skipped']
         );
         $token = Str::random(40);
         $request->session()->put('sales_imports.'.$token, [

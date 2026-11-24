@@ -47,8 +47,6 @@ Route::middleware('auth')->group(function () {
         ->name('products.import.template');
     Route::post('/products/import/preview', [ProductImportController::class, 'preview'])
         ->name('products.import.preview');
-    Route::post('/products/import/mapping', [ProductImportController::class, 'applyMappings'])
-        ->name('products.import.mapping');
     Route::post('/products/import/commit', [ProductImportController::class, 'commit'])
         ->name('products.import.commit');
     Route::resource('products', ProductController::class);

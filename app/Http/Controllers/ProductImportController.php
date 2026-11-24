@@ -9,9 +9,7 @@ use App\Models\Product;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Exceptions\NoTypeDetectedException;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as SpreadsheetReaderException;
@@ -75,9 +73,7 @@ class ProductImportController extends Controller
         $headerIndexes = [];
 
         foreach ($headers as $index => $header) {
-            if ($header === 'produk' || $header === 'kategori') {
-                $headerIndexes[$header] = $index;
-            }
+            $headerIndexes[$header] = $index;
         }
 
         $dataRows = $rows->slice(1)->values();
@@ -90,21 +86,24 @@ class ProductImportController extends Controller
 
         $existingNames = Product::query()
             ->get(['name'])
-            ->groupBy(fn (Product $product) => $this->normalizeName($product->name));
-        $categories = Category::query()
-            ->orderBy('name')
-            ->get(['id', 'name']);
-        $categoryOptions = $categories
-            ->map(fn (Category $category) => [
-                'id' => $category->id,
-                'name' => $category->name,
-            ])
+            ->map(fn (Product $product) => $this->normalizeName($product->name))
             ->all();
-        $categoriesByName = $categories
-            ->groupBy(fn (Category $category) => $this->normalizeName($category->name));
+        $existingCategories = Category::query()
+            ->orderBy('id')
+            ->get(['id', 'name']);
+        $categoryIdsByName = [];
+
+        foreach ($existingCategories as $category) {
+            $normalizedCategoryName = $this->normalizeName($category->name);
+
+            if ($normalizedCategoryName !== '') {
+                $categoryIdsByName[$normalizedCategoryName] ??= $category->id;
+            }
+        }
+
         $seenNames = [];
+        $nameOccurrences = [];
         $previewRows = [];
-        $mappingCatalog = [];
         $skipped = 0;
 
         foreach ($dataRows as $index => $row) {
@@ -118,70 +117,92 @@ class ProductImportController extends Controller
             $rowNumber = $index + 2;
             $name = trim((string) ($values[$headerIndexes['produk']] ?? ''));
             $categoryName = trim((string) ($values[$headerIndexes['kategori']] ?? ''));
-            $isDuplicate = false;
-            $baseErrors = [];
             $normalizedName = $this->normalizeName($name);
+            $normalizedCategoryName = $this->normalizeName($categoryName);
+            $rowErrors = [];
+            $isDuplicate = false;
+            $duplicateMessage = null;
 
             if ($name === '') {
-                $baseErrors[] = 'Nama produk wajib diisi.';
+                $rowErrors[] = 'Nama produk wajib diisi.';
             } elseif (mb_strlen($name) > 255) {
-                $baseErrors[] = 'Nama produk maksimal 255 karakter.';
-            } elseif ($existingNames->has($normalizedName)) {
-                $baseErrors[] = 'Nama produk sudah ada di database.';
+                $rowErrors[] = 'Nama produk maksimal 255 karakter.';
+            } elseif (in_array($normalizedName, $existingNames, true)) {
+                $duplicateMessage = 'Nama produk sudah ada di database.';
                 $isDuplicate = true;
             } elseif (isset($seenNames[$normalizedName])) {
-                $baseErrors[] = 'Nama produk duplikat di dalam file (baris '
+                $duplicateMessage = 'Nama produk duplikat di dalam file (baris '
                     .$seenNames[$normalizedName].').';
                 $isDuplicate = true;
             }
 
-            if ($normalizedName !== '' && ! isset($seenNames[$normalizedName])) {
-                $seenNames[$normalizedName] = $rowNumber;
+            if ($normalizedName !== '') {
+                $seenNames[$normalizedName] ??= $rowNumber;
+                $nameOccurrences[$normalizedName][] = count($previewRows);
             }
 
-            $categoryId = null;
-            $mappedCategory = null;
-            $categoryKey = null;
-
             if ($categoryName === '') {
-                $categoryRequired = true;
-            } else {
-                $categoryRequired = false;
-                $matchingCategories = $categoriesByName->get(
-                    $this->normalizeName($categoryName),
-                    collect()
-                );
-
-                if ($matchingCategories->count() === 1) {
-                    $category = $matchingCategories->first();
-                    $categoryId = $category->id;
-                    $mappedCategory = $category->name;
-                } else {
-                    $categoryKey = hash(
-                        'sha256',
-                        $this->normalizeName($categoryName)
-                    );
-
-                    if (! isset($mappingCatalog[$categoryKey])) {
-                        $mappingCatalog[$categoryKey] = [
-                            'source_name' => $categoryName,
-                            'options' => $categoryOptions,
-                        ];
-                    }
-                }
+                $rowErrors[] = 'Kategori wajib diisi.';
+            } elseif (mb_strlen($categoryName) > 255) {
+                $rowErrors[] = 'Nama kategori maksimal 255 karakter.';
             }
 
             $previewRows[] = [
                 'row_number' => $rowNumber,
                 'name' => $name,
                 'category_name' => $categoryName,
-                'mapped_category' => $mappedCategory,
-                'category_id' => $categoryId,
-                'category_key' => $categoryKey,
-                'category_required' => $categoryRequired,
-                'base_errors' => $baseErrors,
+                'category_status' => $normalizedCategoryName === ''
+                    ? null
+                    : (isset($categoryIdsByName[$normalizedCategoryName])
+                        ? 'Kategori tersedia'
+                        : 'Kategori baru'),
+                'normalized_category_name' => $normalizedCategoryName,
+                'base_errors' => $rowErrors,
+                'duplicate_message' => $duplicateMessage,
                 'is_duplicate' => $isDuplicate,
+                'is_ambiguous' => false,
             ];
+        }
+
+        foreach ($nameOccurrences as $occurrences) {
+            $categoryNames = [];
+
+            foreach ($occurrences as $rowIndex) {
+                $categoryName = $previewRows[$rowIndex]['normalized_category_name'];
+                $categoryNames[$categoryName] = true;
+            }
+
+            if (count($categoryNames) < 2) {
+                continue;
+            }
+
+            $rowNumbers = array_map(
+                fn (int $rowIndex) => $previewRows[$rowIndex]['row_number'],
+                $occurrences
+            );
+            $message = 'Nama produk yang sama memiliki kategori berbeda dalam file (baris '
+                .implode(', ', $rowNumbers).').';
+
+            foreach ($occurrences as $rowIndex) {
+                $previewRows[$rowIndex]['base_errors'][] = $message;
+                $previewRows[$rowIndex]['is_ambiguous'] = true;
+            }
+        }
+
+        $categorySummary = [];
+
+        foreach ($previewRows as $row) {
+            $normalizedCategoryName = $row['normalized_category_name'];
+
+            if (
+                $normalizedCategoryName !== ''
+                && ! isset($categorySummary[$normalizedCategoryName])
+            ) {
+                $categorySummary[$normalizedCategoryName] = [
+                    'name' => $row['category_name'],
+                    'status' => $row['category_status'],
+                ];
+            }
         }
 
         if ($previewRows === []) {
@@ -194,9 +215,7 @@ class ProductImportController extends Controller
         $preview = [
             'user_id' => $request->user()->id,
             'rows' => $previewRows,
-            'mapping_catalog' => $mappingCatalog,
-            'mappings' => [],
-            'category_options' => $categoryOptions,
+            'categories' => array_values($categorySummary),
             'skipped' => $skipped,
             'completed' => false,
         ];
@@ -204,81 +223,6 @@ class ProductImportController extends Controller
         $request->session()->put('product_imports.'.$token, $preview);
 
         return $this->previewView($token, $preview);
-    }
-
-    public function applyMappings(Request $request)
-    {
-        $validated = $request->validate([
-            'token' => ['required', 'string', 'size:40'],
-        ]);
-        $sessionKey = 'product_imports.'.$validated['token'];
-        $preview = $request->session()->get($sessionKey);
-
-        abort_unless(
-            is_array($preview)
-                && ($preview['user_id'] ?? null) === $request->user()->id,
-            404
-        );
-
-        $validator = Validator::make($request->all(), [
-            'mappings' => ['required', 'array'],
-            'mappings.*' => ['required', 'integer'],
-        ]);
-
-        if ($validator->fails()) {
-            return $this->previewView(
-                $validated['token'],
-                $preview,
-                ['Pilih kategori database untuk setiap kategori Excel yang belum cocok.']
-            );
-        }
-
-        $mappings = $validator->validated()['mappings'];
-        $expectedKeys = array_keys($preview['mapping_catalog']);
-
-        if (
-            array_diff($expectedKeys, array_keys($mappings)) !== []
-            || array_diff(array_keys($mappings), $expectedKeys) !== []
-        ) {
-            return $this->previewView(
-                $validated['token'],
-                $preview,
-                ['Pemetaan kategori tidak sesuai dengan kategori yang ditampilkan.']
-            );
-        }
-
-        $categoryIds = array_map('intval', array_values($mappings));
-        $categories = Category::query()
-            ->whereIn('id', $categoryIds)
-            ->get(['id', 'name'])
-            ->keyBy('id');
-
-        foreach ($mappings as $key => $categoryId) {
-            $categoryId = (int) $categoryId;
-            $category = $categories->get($categoryId);
-            $availableIds = array_column(
-                $preview['mapping_catalog'][$key]['options'],
-                'id'
-            );
-
-            if (! $category || ! in_array($categoryId, $availableIds, true)) {
-                return $this->previewView(
-                    $validated['token'],
-                    $preview,
-                    ['Kategori pilihan sudah tidak tersedia. Muat ulang preview sebelum melanjutkan.']
-                );
-            }
-
-            $preview['mappings'][$key] = [
-                'id' => $category->id,
-                'name' => $category->name,
-            ];
-        }
-
-        $this->refreshPreviewState($preview);
-        $request->session()->put($sessionKey, $preview);
-
-        return $this->previewView($validated['token'], $preview);
     }
 
     public function commit(Request $request)
@@ -302,42 +246,60 @@ class ProductImportController extends Controller
                 ->with('success', 'Import ini sudah diproses; tidak ada produk tambahan.');
         }
 
-        if ($preview['errors'] !== [] || $preview['valid_rows'] === []) {
+        if (
+            $preview['counts']['problematic'] > 0
+            || (
+                $preview['valid_rows'] === []
+                && $preview['counts']['duplicates'] === 0
+            )
+        ) {
             return redirect()->route('products.import');
         }
 
         $created = 0;
+        $skippedDuplicates = $preview['counts']['duplicates'];
 
         try {
-            DB::transaction(function () use ($preview, &$created) {
+            DB::transaction(function () use ($preview, &$created, &$skippedDuplicates) {
+                $categories = Category::query()
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get(['id', 'name']);
+                $categoryIdsByName = [];
+
+                foreach ($categories as $category) {
+                    $normalizedCategoryName = $this->normalizeName($category->name);
+
+                    if ($normalizedCategoryName !== '') {
+                        $categoryIdsByName[$normalizedCategoryName] ??= $category->id;
+                    }
+                }
+
                 $existingNames = Product::query()
                     ->lockForUpdate()
                     ->get(['name'])
-                    ->map(fn (Product $product) => $this->normalizeName($product->name))
+                    ->mapWithKeys(fn (Product $product) => [
+                        $this->normalizeName($product->name) => true,
+                    ])
                     ->all();
 
                 foreach ($preview['valid_rows'] as $row) {
-                    if (in_array($this->normalizeName($row['name']), $existingNames, true)) {
-                        throw ValidationException::withMessages([
-                            'file' => 'Nama produk '.$row['name']
-                                .' sudah ditambahkan sejak preview. Unggah ulang file untuk memperbarui preview.',
-                        ]);
+                    $normalizedName = $this->normalizeName($row['name']);
+
+                    if (isset($existingNames[$normalizedName])) {
+                        $skippedDuplicates++;
+                        continue;
                     }
 
-                    $category = Category::query()
-                        ->whereKey($row['category_id'])
-                        ->lockForUpdate()
-                        ->first();
+                    $normalizedCategoryName = $this->normalizeName($row['category_name']);
+                    $categoryId = $categoryIdsByName[$normalizedCategoryName] ?? null;
 
-                    if (
-                        ! $category
-                        || $this->normalizeName($category->name)
-                            !== $this->normalizeName($row['mapped_category_name'])
-                    ) {
-                        throw ValidationException::withMessages([
-                            'file' => 'Kategori untuk produk '.$row['name']
-                                .' sudah tidak tersedia. Unggah ulang file untuk memperbarui preview.',
+                    if ($categoryId === null) {
+                        $category = Category::create([
+                            'name' => $row['category_name'],
                         ]);
+                        $categoryId = $category->id;
+                        $categoryIdsByName[$normalizedCategoryName] = $categoryId;
                     }
 
                     $code = $row['code'];
@@ -347,19 +309,15 @@ class ProductImportController extends Controller
                     }
 
                     Product::create([
-                        'category_id' => $row['category_id'],
+                        'category_id' => $categoryId,
                         'code' => $code,
                         'name' => $row['name'],
                     ]);
 
-                    $existingNames[] = $this->normalizeName($row['name']);
+                    $existingNames[$normalizedName] = true;
                     $created++;
                 }
-            });
-        } catch (ValidationException $exception) {
-            return redirect()
-                ->route('products.import')
-                ->with('error', $exception->errors()['file'][0]);
+            }, 3);
         } catch (QueryException $exception) {
             report($exception);
 
@@ -376,7 +334,10 @@ class ProductImportController extends Controller
 
         return redirect()
             ->route('products.import')
-            ->with('import_report', ['created' => $created]);
+            ->with('import_report', [
+                'created' => $created,
+                'duplicates' => $skippedDuplicates,
+            ]);
     }
 
     private function generateProductCode(array $reservedCodes = []): string
@@ -401,40 +362,23 @@ class ProductImportController extends Controller
 
         foreach ($preview['rows'] as &$row) {
             $rowErrors = $row['base_errors'];
-            $categoryId = $row['category_id'];
-            $mappedCategory = $row['mapped_category'];
 
-            if ($row['category_required']) {
-                $rowErrors[] = 'Kategori wajib diisi.';
-                $categoryId = null;
-                $mappedCategory = null;
-            } elseif ($row['category_key'] !== null) {
-                $mapping = $preview['mappings'][$row['category_key']] ?? null;
-
-                if ($mapping === null) {
-                    $rowErrors[] = 'Kategori Excel belum dipetakan ke kategori database.';
-                    $categoryId = null;
-                    $mappedCategory = null;
-                } else {
-                    $categoryId = $mapping['id'];
-                    $mappedCategory = $mapping['name'];
-                }
+            if ($row['is_duplicate'] && ! $row['is_ambiguous']) {
+                $duplicates++;
             }
 
-            $isDuplicate = $row['is_duplicate'];
-
-            if ($isDuplicate) {
-                $duplicates++;
-            } elseif ($rowErrors !== []) {
+            if ($rowErrors !== []) {
                 $problematic++;
             }
 
-            $row['category_id'] = $categoryId;
-            $row['mapped_category'] = $mappedCategory;
             $row['errors'] = $rowErrors;
-            $row['status'] = $isDuplicate
-                ? 'Duplikat'
-                : ($rowErrors === [] ? 'Valid' : 'Bermasalah');
+            $row['message'] = implode(
+                ' ',
+                array_filter(array_merge($rowErrors, [$row['duplicate_message']]))
+            );
+            $row['status'] = $rowErrors !== []
+                ? 'Bermasalah'
+                : ($row['is_duplicate'] ? 'Duplikat' : 'Valid');
 
             if ($rowErrors !== []) {
                 $errors[] = [
@@ -444,14 +388,17 @@ class ProductImportController extends Controller
                 continue;
             }
 
+            if ($row['is_duplicate']) {
+                continue;
+            }
+
             $code = $row['code'] ?? $this->generateProductCode($reservedCodes);
             $row['code'] = $code;
             $reservedCodes[] = $code;
             $validRows[] = [
                 'row_number' => $row['row_number'],
                 'name' => $row['name'],
-                'category_id' => $categoryId,
-                'mapped_category_name' => $mappedCategory,
+                'category_name' => $row['category_name'],
                 'code' => $code,
             ];
         }
@@ -464,23 +411,18 @@ class ProductImportController extends Controller
             'valid' => count($validRows),
             'duplicates' => $duplicates,
             'problematic' => $problematic,
-            'to_import' => $errors === [] ? count($validRows) : 0,
+            'to_import' => $problematic === 0 ? count($validRows) : 0,
             'skipped' => $preview['skipped'],
         ];
     }
 
-    private function previewView(
-        string $token,
-        array $preview,
-        array $mappingErrors = []
-    ) {
+    private function previewView(string $token, array $preview)
+    {
         return view('products.import-preview', [
             'token' => $token,
             'rows' => $preview['rows'],
+            'categories' => $preview['categories'],
             'errors' => $preview['errors'],
-            'mappingErrors' => $mappingErrors,
-            'mappingCatalog' => $preview['mapping_catalog'],
-            'mappings' => $preview['mappings'],
             'counts' => $preview['counts'],
             'completed' => $preview['completed'],
         ]);
