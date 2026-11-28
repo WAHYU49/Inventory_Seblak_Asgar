@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Ingredient;
 use App\Models\Product;
+use App\Models\Recipe;
+use App\Models\RecipeDetail;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -353,11 +355,196 @@ class ProductImportTest extends TestCase
             ->assertOk()
             ->assertDontSee('Harga')
             ->assertDontSee('selling_price')
-            ->assertSee('Kategori dari Excel akan digunakan');
+            ->assertSee('Kategori yang belum tersedia');
 
-        $this->get(route('products.import.template'))
+        $template = $this->get(route('products.import.template'))
             ->assertOk()
             ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        $spreadsheet = IOFactory::createReader('Xlsx')
+            ->load($template->baseResponse->getFile()->getPathname());
+        $this->assertSame(['PRODUK', 'RESEP MENU'], $spreadsheet->getSheetNames());
+        $this->assertSame(
+            ['Produk', 'Kategori'],
+            $spreadsheet->getSheetByName('PRODUK')->rangeToArray('A1:B1')[0]
+        );
+        $this->assertSame(
+            ['Produk', 'Bahan Baku', 'Jumlah', 'Satuan'],
+            $spreadsheet->getSheetByName('RESEP MENU')->rangeToArray('A1:D1')[0]
+        );
+        $spreadsheet->disconnectWorksheets();
+    }
+
+    public function test_import_creates_recipes_for_new_and_existing_products_without_changing_stock(): void
+    {
+        $category = Category::create(['name' => 'Menu Lama']);
+        $existingWithoutRecipe = $this->createProduct('Menu Tanpa Resep', $category);
+        $existingWithRecipe = $this->createProduct('Menu Resep Lama', $category);
+        $oldRecipe = Recipe::create([
+            'product_id' => $existingWithRecipe->id,
+            'name' => 'Resep Lama',
+            'is_active' => true,
+        ]);
+        $kerupuk = $this->createIngredient('Kerupuk', 'gram', 12.5);
+        $telur = $this->createIngredient('Telur', 'pcs', 8);
+        $bakso = $this->createIngredient('Bakso Aci', 'pcs', 20);
+        RecipeDetail::create([
+            'recipe_id' => $oldRecipe->id,
+            'ingredient_id' => $telur->id,
+            'quantity' => 99,
+        ]);
+        $this->actingAs(User::factory()->create());
+
+        $preview = $this->post(route('products.import.preview'), [
+            'file' => $this->makeWorkbook(
+                [
+                    ['Produk', 'Kategori'],
+                    ['Seblak Original', 'Seblak'],
+                    ['Menu Tanpa Resep', 'Menu Lama'],
+                    ['Menu Resep Lama', 'Menu Lama'],
+                ],
+                [
+                    ['Produk', 'Bahan Baku', 'Jumlah', 'Satuan'],
+                    ['Seblak Original', 'Kerupuk', 100, 'gram'],
+                    ['Seblak Original', 'Telur', 1, 'pcs'],
+                    ['Seblak Original', 'Bakso Aci', 3, 'pcs'],
+                    ['Menu Tanpa Resep', 'Telur', 2, 'pcs'],
+                    ['Menu Resep Lama', 'Bahan Tidak Dipakai', 1, 'kg'],
+                ]
+            ),
+        ]);
+
+        $preview->assertOk()
+            ->assertSee('Produk valid yang akan diimport: 1')
+            ->assertSee('Jumlah produk baru: 1')
+            ->assertSee('Produk duplikat dilewati: 2')
+            ->assertSee('Jumlah resep yang akan dibuat: 2')
+            ->assertSee('Jumlah detail bahan baku: 4')
+            ->assertSee('Resep yang sudah tersedia (dilewati): 1')
+            ->assertSee('Resep tersedia — dilewati')
+            ->assertSee('Konfirmasi Import');
+        $this->assertDatabaseCount('products', 2);
+        $this->assertDatabaseCount('categories', 1);
+        $this->assertDatabaseCount('recipes', 1);
+        $this->assertDatabaseCount('recipe_details', 1);
+        $this->assertDatabaseCount('stock_movements', 0);
+        $this->assertSame(12.5, (float) $kerupuk->fresh()->current_stock);
+        $this->assertSame(8.0, (float) $telur->fresh()->current_stock);
+        $this->assertSame(20.0, (float) $bakso->fresh()->current_stock);
+
+        $this->post(route('products.import.commit'), [
+            'token' => $this->tokenFrom($preview),
+        ])
+            ->assertRedirect(route('products.import'))
+            ->assertSessionHas('import_report.created', 1)
+            ->assertSessionHas('import_report.recipes_created', 2)
+            ->assertSessionHas('import_report.recipe_details_created', 4)
+            ->assertSessionHas('import_report.recipes_skipped', 1);
+
+        $this->assertDatabaseCount('products', 3);
+        $this->assertDatabaseCount('recipes', 3);
+        $this->assertDatabaseCount('recipe_details', 5);
+        $this->assertDatabaseHas('recipes', [
+            'product_id' => $existingWithoutRecipe->id,
+            'name' => 'Menu Tanpa Resep',
+        ]);
+        $this->assertDatabaseHas('recipes', [
+            'id' => $oldRecipe->id,
+            'name' => 'Resep Lama',
+        ]);
+        $this->assertDatabaseHas('recipe_details', [
+            'recipe_id' => $oldRecipe->id,
+            'ingredient_id' => $telur->id,
+            'quantity' => 99,
+        ]);
+        $this->assertDatabaseCount('stock_movements', 0);
+        $this->assertSame(12.5, (float) $kerupuk->fresh()->current_stock);
+        $this->assertSame(8.0, (float) $telur->fresh()->current_stock);
+        $this->assertSame(20.0, (float) $bakso->fresh()->current_stock);
+
+        $this->get(route('recipes.index'))
+            ->assertOk()
+            ->assertSee('Seblak Original')
+            ->assertSee('Menu Tanpa Resep');
+    }
+
+    public function test_invalid_recipe_rows_block_import_and_preview_does_not_change_inventory(): void
+    {
+        $ingredient = $this->createIngredient('Tepung', 'gram', 25);
+        $preview = $this->actingAs(User::factory()->create())
+            ->post(route('products.import.preview'), [
+                'file' => $this->makeWorkbook(
+                    [
+                        ['Produk', 'Kategori'],
+                        ['Produk Baru', 'Kategori Baru'],
+                    ],
+                    [
+                        ['Produk', 'Bahan Baku', 'Jumlah', 'Satuan'],
+                        ['Produk Baru', 'Tidak Ada', 1, 'gram'],
+                        ['Produk Baru', 'Tepung', 0, 'gram'],
+                        ['Produk Baru', 'Tepung', 1, 'kg'],
+                        ['Produk Tidak Terdaftar', 'Tepung', 'teks', 'kantong'],
+                    ]
+                ),
+            ]);
+
+        $preview->assertOk()
+            ->assertSee('Bahan baku tidak ditemukan pada tabel ingredients.')
+            ->assertSee('Jumlah harus berupa angka lebih dari nol')
+            ->assertSee('Satuan tidak sesuai')
+            ->assertSee('Produk tidak ditemukan atau tidak sesuai')
+            ->assertSee('Bahan baku tidak ditemukan: 1')
+            ->assertSee('Produk resep tidak ditemukan/tidak sesuai: 1')
+            ->assertSee('Kesalahan jumlah dan satuan: 3')
+            ->assertSee('Data yang akan diimport: 0')
+            ->assertDontSee('Konfirmasi Import');
+
+        $this->assertDatabaseCount('products', 0);
+        $this->assertDatabaseCount('categories', 0);
+        $this->assertDatabaseCount('recipes', 0);
+        $this->assertDatabaseCount('recipe_details', 0);
+        $this->assertDatabaseCount('ingredients', 1);
+        $this->assertDatabaseCount('stock_movements', 0);
+        $this->assertSame(25.0, (float) $ingredient->fresh()->current_stock);
+    }
+
+    public function test_recipe_detail_persistence_failure_rolls_back_products_categories_and_recipes(): void
+    {
+        $this->createIngredient('Beras', 'gram', 30);
+        $preview = $this->actingAs(User::factory()->create())
+            ->post(route('products.import.preview'), [
+                'file' => $this->makeWorkbook(
+                    [
+                        ['Produk', 'Kategori'],
+                        ['Nasi Goreng', 'Nasgor'],
+                    ],
+                    [
+                        ['Produk', 'Bahan Baku', 'Jumlah', 'Satuan'],
+                        ['Nasi Goreng', 'Beras', 150, 'gram'],
+                    ]
+                ),
+            ]);
+
+        Event::listen('eloquent.creating: '.RecipeDetail::class, function () {
+            throw new QueryException(
+                'mysql_testing',
+                'insert into recipe_details',
+                [],
+                new \RuntimeException('Simulated recipe detail insert failure.')
+            );
+        });
+
+        $this->post(route('products.import.commit'), [
+            'token' => $this->tokenFrom($preview),
+        ])
+            ->assertRedirect(route('products.import'))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseCount('products', 0);
+        $this->assertDatabaseCount('categories', 0);
+        $this->assertDatabaseCount('recipes', 0);
+        $this->assertDatabaseCount('recipe_details', 0);
+        $this->assertDatabaseCount('stock_movements', 0);
     }
 
     private function createProduct(string $name, Category $category): Product
@@ -383,10 +570,28 @@ class ProductImportTest extends TestCase
         return $matches[1];
     }
 
-    private function makeWorkbook(array $rows): UploadedFile
+    private function createIngredient(string $name, string $unit, float $stock): Ingredient
     {
-        $spreadsheet = new Spreadsheet();
-        $spreadsheet->getActiveSheet()->fromArray($rows, null, 'A1');
+        return Ingredient::create([
+            'code' => 'BB-'.fake()->unique()->numerify('######'),
+            'name' => $name,
+            'unit' => $unit,
+            'current_stock' => $stock,
+            'minimum_stock' => 1,
+        ]);
+    }
+
+    private function makeWorkbook(
+        array $productRows,
+        array $recipeRows = [['Produk', 'Bahan Baku', 'Jumlah', 'Satuan']]
+    ): UploadedFile {
+        $spreadsheet = new Spreadsheet;
+        $productSheet = $spreadsheet->getActiveSheet();
+        $productSheet->setTitle('PRODUK');
+        $productSheet->fromArray($productRows, null, 'A1');
+        $recipeSheet = $spreadsheet->createSheet();
+        $recipeSheet->setTitle('RESEP MENU');
+        $recipeSheet->fromArray($recipeRows, null, 'A1');
         $path = tempnam(sys_get_temp_dir(), 'product-master-');
 
         try {

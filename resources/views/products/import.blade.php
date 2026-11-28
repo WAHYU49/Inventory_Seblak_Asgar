@@ -5,7 +5,7 @@
 @section('content')
 <div class="page-header">
     <h1>Import Produk</h1>
-    <p>Unggah file Excel untuk memeriksa produk sebelum ditambahkan.</p>
+    <p>Unggah file Excel untuk memeriksa produk dan resep menu sebelum ditambahkan.</p>
 </div>
 
 <p><a href="{{ route('products.index') }}" class="btn btn-secondary">← Kembali ke Produk Menu</a></p>
@@ -22,6 +22,9 @@
     <div class="alert alert-success" role="status">
         Import selesai. {{ $report['created'] }} produk ditambahkan;
         {{ $report['duplicates'] }} produk duplikat dilewati.
+        {{ $report['recipes_created'] }} resep dibuat dengan
+        {{ $report['recipe_details_created'] }} detail bahan baku;
+        {{ $report['recipes_skipped'] }} resep yang sudah tersedia dilewati.
     </div>
 @endif
 
@@ -34,8 +37,10 @@
 @endif
 
 <div class="content-card">
-    <p>File harus memiliki dua kolom: <strong>Produk</strong> dan <strong>Kategori</strong>.</p>
-    <p>Kategori dari Excel akan digunakan jika sudah tersedia atau dibuat saat konfirmasi. Data produk dan bahan baku tetap dikelola terpisah.</p>
+    <p>File Excel harus memiliki sheet <strong>PRODUK</strong> (kolom Produk, Kategori) dan
+        <strong>RESEP MENU</strong> (kolom Produk, Bahan Baku, Jumlah, Satuan).</p>
+    <p>Kategori yang belum tersedia dan produk baru hanya dibuat saat konfirmasi.
+        Resep hanya menggunakan bahan baku dan satuan operasional yang sudah tersedia.</p>
     <a href="{{ route('products.import.template') }}" class="btn btn-secondary">Unduh Template Excel</a>
 </div>
 

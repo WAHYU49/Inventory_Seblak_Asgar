@@ -71,6 +71,104 @@ class SalesResultImportTest extends TestCase
         $this->assertSame(0, Sale::where('notes', 'Import hasil penjualan Excel.')->count());
     }
 
+    public function test_preview_rejects_products_without_an_active_recipe_without_changing_stock(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $product = $this->createProductWithoutRecipe('Mie Tanpa Resep');
+        $ingredient = Ingredient::create([
+            'code' => 'BB-'.Str::upper(Str::random(12)),
+            'name' => 'Bahan Uji Preview',
+            'unit' => 'gram',
+            'current_stock' => 10,
+            'minimum_stock' => 1,
+            'is_active' => true,
+        ]);
+        Recipe::create([
+            'product_id' => $product->id,
+            'name' => 'Resep Nonaktif',
+            'is_active' => false,
+        ]);
+
+        $preview = $this->preview([
+            $this->headers(),
+            [$product->name, 2],
+        ]);
+
+        $preview->assertOk()
+            ->assertSee('Resep belum tersedia')
+            ->assertSee('Baris 2: Produk Mie Tanpa Resep belum memiliki resep aktif atau detail resep.')
+            ->assertSee('Mie Tanpa Resep')
+            ->assertDontSee('name="token"', false);
+
+        $this->assertSame(10.0, (float) $ingredient->fresh()->current_stock);
+        $this->assertSame(0, Sale::where('notes', 'Import hasil penjualan Excel.')->count());
+        $this->assertSame(0, StockMovement::where('ingredient_id', $ingredient->id)->count());
+    }
+
+    public function test_preview_rejects_active_recipes_without_details(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $product = $this->createProductWithoutRecipe('Menu Resep Kosong');
+        Recipe::create([
+            'product_id' => $product->id,
+            'name' => 'Resep Kosong',
+            'is_active' => true,
+        ]);
+
+        $this->preview([
+            $this->headers(),
+            [$product->name, 1],
+        ])
+            ->assertOk()
+            ->assertSee('Resep belum tersedia')
+            ->assertSee('Baris 2: Produk Menu Resep Kosong belum memiliki resep aktif atau detail resep.')
+            ->assertDontSee('name="token"', false);
+
+        $this->assertSame(0, Sale::where('notes', 'Import hasil penjualan Excel.')->count());
+    }
+
+    public function test_zero_quantity_product_without_recipe_remains_skipped(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $product = $this->createProductWithoutRecipe('Menu Nol Tanpa Resep');
+
+        $this->preview([
+            $this->headers(),
+            [$product->name, 0],
+        ])
+            ->assertOk()
+            ->assertSee('Dilewati (0)')
+            ->assertDontSee('Resep belum tersedia')
+            ->assertDontSee('Import tidak dapat dikonfirmasi');
+
+        $this->assertSame(0, Sale::where('notes', 'Import hasil penjualan Excel.')->count());
+    }
+
+    public function test_preview_blocks_mixed_valid_and_recipe_missing_products_without_changing_stock(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$validProduct, $ingredient] = $this->createProductWithIngredient('Menu Resep Aktif', 1, 10);
+        $productWithoutRecipe = $this->createProductWithoutRecipe('Menu Belum Diresepkan');
+
+        $preview = $this->preview([
+            $this->headers(),
+            [$validProduct->name, 2],
+            [$productWithoutRecipe->name, 1],
+        ]);
+
+        $preview->assertOk()
+            ->assertSee('Menu Resep Aktif')
+            ->assertSee('Menu Belum Diresepkan')
+            ->assertSee('Baris 3: Produk Menu Belum Diresepkan belum memiliki resep aktif atau detail resep.')
+            ->assertSee('Total hasil penggabungan')
+            ->assertSee('Resep belum tersedia')
+            ->assertDontSee('name="token"', false);
+
+        $this->assertSame(10.0, (float) $ingredient->fresh()->current_stock);
+        $this->assertSame(0, Sale::where('notes', 'Import hasil penjualan Excel.')->count());
+        $this->assertSame(0, StockMovement::where('ingredient_id', $ingredient->id)->count());
+    }
+
     public function test_confirmation_processes_aggregated_sale_once_and_repeated_submit_is_idempotent(): void
     {
         $this->actingAs(User::factory()->create());
@@ -336,6 +434,19 @@ class SalesResultImportTest extends TestCase
     private function headers(): array
     {
         return ['Produk', 'Terjual'];
+    }
+
+    private function createProductWithoutRecipe(string $name): Product
+    {
+        $category = Category::firstOrCreate(['name' => 'Kategori Uji']);
+
+        return Product::create([
+            'category_id' => $category->id,
+            'code' => 'PR-'.Str::upper(Str::random(12)),
+            'name' => $name,
+            'selling_price' => 987654,
+            'is_active' => true,
+        ]);
     }
 
     private function makeWorkbook(array $rows): UploadedFile

@@ -142,6 +142,11 @@ class SaleController extends Controller
         }
 
         $productsByName = Product::query()
+            ->with([
+                'recipe' => fn ($query) => $query
+                    ->where('is_active', true)
+                    ->withCount('details'),
+            ])
             ->get(['id', 'name', 'is_active'])
             ->groupBy(fn (Product $product) => $this->normalizeProductName($product->name));
         $groupedRows = [];
@@ -217,6 +222,9 @@ class SaleController extends Controller
                     if (! $product->is_active) {
                         $errors[] = 'Produk tidak aktif dan tidak dapat dijual.';
                         $matchStatus = 'Produk nonaktif';
+                    } elseif (! $product->recipe || (int) $product->recipe->details_count === 0) {
+                        $errors[] = 'Produk '.$product->name.' belum memiliki resep aktif atau detail resep.';
+                        $matchStatus = 'Resep belum tersedia';
                     } else {
                         $matchStatus = $product->name;
                     }

@@ -14,6 +14,10 @@ class PurchaseController extends Controller
 {
     use ProcessesIdempotentTransactions;
 
+    private const MAX_PURCHASE_QUANTITY = '999999999.999';
+
+    private const MAX_STOCK_MILLIUNITS = 999999999999;
+
     public function index(Request $request)
     {
         $filters = $request->validate([
@@ -69,7 +73,13 @@ class PurchaseController extends Controller
             'notes' => 'nullable|string',
             'details' => 'required|array|min:1',
             'details.*.ingredient_id' => 'required|distinct|exists:ingredients,id',
-            'details.*.quantity' => 'required|numeric|gt:0',
+            'details.*.quantity' => [
+                'required',
+                'numeric',
+                'gt:0',
+                'decimal:0,3',
+                'max:'.self::MAX_PURCHASE_QUANTITY,
+            ],
         ]);
 
         $this->processIdempotentTransaction(
@@ -101,6 +111,16 @@ class PurchaseController extends Controller
                     }
 
                     $quantity = $detail['quantity'];
+                    $stockBefore = $ingredient->current_stock;
+                    $quantityMilliunits = (int) round((float) $quantity * 1000);
+                    $stockBeforeMilliunits = (int) round((float) $stockBefore * 1000);
+
+                    if ($stockBeforeMilliunits + $quantityMilliunits > self::MAX_STOCK_MILLIUNITS) {
+                        throw ValidationException::withMessages([
+                            'details' => 'Jumlah pembelian melebihi kapasitas maksimum stok bahan baku.',
+                        ]);
+                    }
+
                     $unitPrice = (float) ($ingredient->purchase_price ?? 0);
                     $subtotal = $quantity * $unitPrice;
 
@@ -111,9 +131,6 @@ class PurchaseController extends Controller
                         'unit_price' => $unitPrice,
                         'subtotal' => $subtotal,
                     ]);
-
-                    // Ambil stok sebelum pembelian
-                    $stockBefore = $ingredient->current_stock;
 
                     // Tambahkan stok bahan baku
                     $ingredient->increment('current_stock', $quantity);
